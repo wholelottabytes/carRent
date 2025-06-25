@@ -8,7 +8,33 @@ namespace WebApplication1.Data.Models
     {
         Hourly,
         Daily,
+        TwoDays,
         Weekly
+    }
+    public class RentalInterval
+    {
+        public PriceType PriceType { get; }
+        public int HourEquivalent { get; }
+
+        private RentalInterval(PriceType priceType, int hourEquivalent)
+        {
+            PriceType = priceType;
+            HourEquivalent = hourEquivalent;
+        }
+
+        public static RentalInterval Hourly = new(PriceType.Hourly, 1);
+        public static RentalInterval Daily = new(PriceType.Daily, 24);
+        public static RentalInterval TwoDays = new(PriceType.TwoDays, 48);
+        public static RentalInterval Weekly = new(PriceType.Weekly, 168);
+
+        public static RentalInterval ForPriceType(PriceType priceType) => priceType switch
+        {
+            PriceType.Hourly => Hourly,
+            PriceType.Daily => Daily,
+            PriceType.TwoDays => TwoDays,
+            PriceType.Weekly => Weekly,
+            _ => throw new ArgumentException("Unknown PriceType", nameof(priceType))
+        };
     }
 
     public class RentalPrice
@@ -21,7 +47,10 @@ namespace WebApplication1.Data.Models
         public Car? Car { get; set; }
 
         [Required]
-        public PriceType PriceType { get; set; }
+        public PriceType PriceType { get; set; } 
+        
+        [NotMapped]
+        public RentalInterval Interval => RentalInterval.ForPriceType(PriceType);
 
         [Required]
         public decimal Price { get; set; }

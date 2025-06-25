@@ -59,7 +59,9 @@ namespace WebApplication1.Data.Context
                 .OnDelete(DeleteBehavior.Restrict);
 
             builder.Entity<Review>()
-                .ToTable(t => t.HasCheckConstraint("CK_Review_Rating_Range", "rating >= 1 AND rating <= 5"));
+                .ToTable(t =>
+                    t.HasCheckConstraint("CK_Review_Rating_Range", 
+                        $"\"{nameof(Review.Rating)}\" >= 1 AND \"{nameof(Review.Rating)}\" <= 5"));
             
             builder.Entity<RentalPrice>()
                 .HasOne(rp => rp.Car)

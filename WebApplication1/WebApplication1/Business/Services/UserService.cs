@@ -12,7 +12,7 @@ using Microsoft.Extensions.Configuration;
 
 namespace WebApplication1.Business.Services
 {
-    public class UserService
+    public class UserService: IUserService
     {
         private readonly IUserRepository _userRepo;
         private readonly UserManager<ApplicationUser> _userManager;
@@ -27,7 +27,7 @@ namespace WebApplication1.Business.Services
         public async Task<string?> AuthenticateAsync(string email, string password)
         {
             var user = await _userManager.FindByEmailAsync(email);
-            if (user == null || user.IsDeleted) return null;
+            if (user is null || user.IsDeleted) return null;
             var result = await _userManager.CheckPasswordAsync(user, password);
             if (!result) return null;
 
@@ -56,7 +56,7 @@ namespace WebApplication1.Business.Services
         public async Task SoftDeleteAsync(string id)
         {
             var user = await _userRepo.GetByIdAsync(id);
-            if (user != null)
+            if (user is not null)
                 await _userRepo.DeleteSoftAsync(user);
         }
     }

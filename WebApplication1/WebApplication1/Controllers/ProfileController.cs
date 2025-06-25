@@ -26,7 +26,7 @@ namespace WebApplication1.API.Controllers
         public async Task<IActionResult> Get()
         {
             var user = await _userManager.GetUserAsync(User);
-            if (user == null) return NotFound();
+            if (user is null) return NotFound();
             return Ok(new ProfileDto { Id = user.Id, Email = user.Email!, FirstName = user.FirstName, LastName = user.LastName, LicenseNumber = user.LicenseNumber });
         }
 
@@ -34,7 +34,7 @@ namespace WebApplication1.API.Controllers
         public async Task<IActionResult> Update([FromBody] UpdateProfileDto dto)
         {
             var user = await _userManager.GetUserAsync(User);
-            if (user == null) return NotFound();
+            if (user is null) return NotFound();
             user.FirstName = dto.FirstName;
             user.LastName = dto.LastName;
             user.LicenseNumber = dto.LicenseNumber;

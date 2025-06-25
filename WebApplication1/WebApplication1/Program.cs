@@ -10,11 +10,13 @@ using WebApplication1.Business.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using WebApplication1.Common.Constants;
+using WebApplication1.Common.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // DbContext and Identity
-builder.Services.AddDbContext<ApplicationDbContext>(opt => opt.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")).UseSnakeCaseNamingConvention());
+builder.Services.AddDbContext<ApplicationDbContext>(opt => opt.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddDefaultTokenProviders();
@@ -47,15 +49,8 @@ builder.Services.AddControllers();
 
 var app = builder.Build();
 
-var scope = app.Services.CreateScope();
-var roleMgr = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
-string[] roles = new[] { "Admin", "User" };
+await app.Services.SeedIdentityAsync();
 
-foreach (var roleName in roles)
-{
-    if (!await roleMgr.RoleExistsAsync(roleName))
-        await roleMgr.CreateAsync(new IdentityRole(roleName));
-}
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

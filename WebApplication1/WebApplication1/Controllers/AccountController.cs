@@ -23,17 +23,17 @@ namespace WebApplication1.API.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Login([FromBody] LoginDto dto)
+        public async Task<ActionResult<LoginResponseDto>> Login([FromBody] LoginDto dto)
         {
             var token = await _userService.AuthenticateAsync(dto.Email, dto.Password);
-            if (token == null)
-                return Unauthorized();               
+            if (token is null) return Unauthorized();
 
-            return Ok(new { Token = token });     
+            var response = new LoginResponseDto { Token = token };
+            return Ok(response);
         }
 
         [HttpPost]
-        public async Task<IActionResult> Register([FromBody] RegisterDto dto)
+        public async Task<ActionResult<RegisterResponseDto>> Register([FromBody] RegisterDto dto)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
@@ -54,8 +54,9 @@ namespace WebApplication1.API.Controllers
             await _userManager.AddToRoleAsync(user, "User");
             
             var token = await _userService.AuthenticateAsync(dto.Email, dto.Password);
-
-            return Ok(new { Token = token });
+            if (token is null) return Unauthorized();
+            var response = new RegisterResponseDto { Token = token };
+            return Ok(response);
         }
     }
 }

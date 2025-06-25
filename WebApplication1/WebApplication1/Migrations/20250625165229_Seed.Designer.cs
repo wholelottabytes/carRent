@@ -12,8 +12,8 @@ using WebApplication1.Data.Context;
 namespace WebApplication1.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250624165933_IsDeleted")]
-    partial class IsDeleted
+    [Migration("20250625165229_Seed")]
+    partial class Seed
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -28,26 +28,21 @@ namespace WebApplication1.Migrations
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
                 {
                     b.Property<string>("Id")
-                        .HasColumnType("text")
-                        .HasColumnName("id");
+                        .HasColumnType("text");
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
-                        .HasColumnType("text")
-                        .HasColumnName("concurrency_stamp");
+                        .HasColumnType("text");
 
                     b.Property<string>("Name")
                         .HasMaxLength(256)
-                        .HasColumnType("character varying(256)")
-                        .HasColumnName("name");
+                        .HasColumnType("character varying(256)");
 
                     b.Property<string>("NormalizedName")
                         .HasMaxLength(256)
-                        .HasColumnType("character varying(256)")
-                        .HasColumnName("normalized_name");
+                        .HasColumnType("character varying(256)");
 
-                    b.HasKey("Id")
-                        .HasName("pk_asp_net_roles");
+                    b.HasKey("Id");
 
                     b.HasIndex("NormalizedName")
                         .IsUnique()
@@ -60,29 +55,23 @@ namespace WebApplication1.Migrations
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasColumnName("id");
+                        .HasColumnType("integer");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<string>("ClaimType")
-                        .HasColumnType("text")
-                        .HasColumnName("claim_type");
+                        .HasColumnType("text");
 
                     b.Property<string>("ClaimValue")
-                        .HasColumnType("text")
-                        .HasColumnName("claim_value");
+                        .HasColumnType("text");
 
                     b.Property<string>("RoleId")
                         .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("role_id");
+                        .HasColumnType("text");
 
-                    b.HasKey("Id")
-                        .HasName("pk_asp_net_role_claims");
+                    b.HasKey("Id");
 
-                    b.HasIndex("RoleId")
-                        .HasDatabaseName("ix_asp_net_role_claims_role_id");
+                    b.HasIndex("RoleId");
 
                     b.ToTable("AspNetRoleClaims", (string)null);
                 });
@@ -91,29 +80,23 @@ namespace WebApplication1.Migrations
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasColumnName("id");
+                        .HasColumnType("integer");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<string>("ClaimType")
-                        .HasColumnType("text")
-                        .HasColumnName("claim_type");
+                        .HasColumnType("text");
 
                     b.Property<string>("ClaimValue")
-                        .HasColumnType("text")
-                        .HasColumnName("claim_value");
+                        .HasColumnType("text");
 
                     b.Property<string>("UserId")
                         .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("user_id");
+                        .HasColumnType("text");
 
-                    b.HasKey("Id")
-                        .HasName("pk_asp_net_user_claims");
+                    b.HasKey("Id");
 
-                    b.HasIndex("UserId")
-                        .HasDatabaseName("ix_asp_net_user_claims_user_id");
+                    b.HasIndex("UserId");
 
                     b.ToTable("AspNetUserClaims", (string)null);
                 });
@@ -121,27 +104,21 @@ namespace WebApplication1.Migrations
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
                 {
                     b.Property<string>("LoginProvider")
-                        .HasColumnType("text")
-                        .HasColumnName("login_provider");
+                        .HasColumnType("text");
 
                     b.Property<string>("ProviderKey")
-                        .HasColumnType("text")
-                        .HasColumnName("provider_key");
+                        .HasColumnType("text");
 
                     b.Property<string>("ProviderDisplayName")
-                        .HasColumnType("text")
-                        .HasColumnName("provider_display_name");
+                        .HasColumnType("text");
 
                     b.Property<string>("UserId")
                         .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("user_id");
+                        .HasColumnType("text");
 
-                    b.HasKey("LoginProvider", "ProviderKey")
-                        .HasName("pk_asp_net_user_logins");
+                    b.HasKey("LoginProvider", "ProviderKey");
 
-                    b.HasIndex("UserId")
-                        .HasDatabaseName("ix_asp_net_user_logins_user_id");
+                    b.HasIndex("UserId");
 
                     b.ToTable("AspNetUserLogins", (string)null);
                 });
@@ -149,18 +126,14 @@ namespace WebApplication1.Migrations
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserRole<string>", b =>
                 {
                     b.Property<string>("UserId")
-                        .HasColumnType("text")
-                        .HasColumnName("user_id");
+                        .HasColumnType("text");
 
                     b.Property<string>("RoleId")
-                        .HasColumnType("text")
-                        .HasColumnName("role_id");
+                        .HasColumnType("text");
 
-                    b.HasKey("UserId", "RoleId")
-                        .HasName("pk_asp_net_user_roles");
+                    b.HasKey("UserId", "RoleId");
 
-                    b.HasIndex("RoleId")
-                        .HasDatabaseName("ix_asp_net_user_roles_role_id");
+                    b.HasIndex("RoleId");
 
                     b.ToTable("AspNetUserRoles", (string)null);
                 });
@@ -168,23 +141,18 @@ namespace WebApplication1.Migrations
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
                 {
                     b.Property<string>("UserId")
-                        .HasColumnType("text")
-                        .HasColumnName("user_id");
+                        .HasColumnType("text");
 
                     b.Property<string>("LoginProvider")
-                        .HasColumnType("text")
-                        .HasColumnName("login_provider");
+                        .HasColumnType("text");
 
                     b.Property<string>("Name")
-                        .HasColumnType("text")
-                        .HasColumnName("name");
+                        .HasColumnType("text");
 
                     b.Property<string>("Value")
-                        .HasColumnType("text")
-                        .HasColumnName("value");
+                        .HasColumnType("text");
 
-                    b.HasKey("UserId", "LoginProvider", "Name")
-                        .HasName("pk_asp_net_user_tokens");
+                    b.HasKey("UserId", "LoginProvider", "Name");
 
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
@@ -193,112 +161,93 @@ namespace WebApplication1.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("name");
+                        .HasColumnType("text");
 
                     b.Property<decimal>("Price")
-                        .HasColumnType("numeric")
-                        .HasColumnName("price");
+                        .HasColumnType("numeric");
 
                     b.Property<Guid>("RentalLocationId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("rental_location_id");
+                        .HasColumnType("uuid");
 
-                    b.HasKey("Id")
-                        .HasName("pk_additional_services");
+                    b.HasKey("Id");
 
-                    b.HasIndex("RentalLocationId")
-                        .HasDatabaseName("ix_additional_services_rental_location_id");
+                    b.HasIndex("RentalLocationId");
 
-                    b.ToTable("additional_services", (string)null);
+                    b.ToTable("AdditionalServices");
                 });
 
             modelBuilder.Entity("WebApplication1.Data.Models.ApplicationUser", b =>
                 {
                     b.Property<string>("Id")
-                        .HasColumnType("text")
-                        .HasColumnName("id");
+                        .HasColumnType("text");
 
                     b.Property<int>("AccessFailedCount")
-                        .HasColumnType("integer")
-                        .HasColumnName("access_failed_count");
+                        .HasColumnType("integer");
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
-                        .HasColumnType("text")
-                        .HasColumnName("concurrency_stamp");
+                        .HasColumnType("text");
 
                     b.Property<string>("Email")
                         .HasMaxLength(256)
-                        .HasColumnType("character varying(256)")
-                        .HasColumnName("email");
+                        .HasColumnType("character varying(256)");
 
                     b.Property<bool>("EmailConfirmed")
-                        .HasColumnType("boolean")
-                        .HasColumnName("email_confirmed");
+                        .HasColumnType("boolean");
 
                     b.Property<string>("FirstName")
-                        .HasColumnType("text")
-                        .HasColumnName("first_name");
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
 
                     b.Property<string>("LastName")
-                        .HasColumnType("text")
-                        .HasColumnName("last_name");
+                        .HasColumnType("text");
 
                     b.Property<string>("LicenseNumber")
-                        .HasColumnType("text")
-                        .HasColumnName("license_number");
+                        .HasColumnType("text");
 
                     b.Property<bool>("LockoutEnabled")
-                        .HasColumnType("boolean")
-                        .HasColumnName("lockout_enabled");
+                        .HasColumnType("boolean");
 
                     b.Property<DateTimeOffset?>("LockoutEnd")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("lockout_end");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("NormalizedEmail")
                         .HasMaxLength(256)
-                        .HasColumnType("character varying(256)")
-                        .HasColumnName("normalized_email");
+                        .HasColumnType("character varying(256)");
 
                     b.Property<string>("NormalizedUserName")
                         .HasMaxLength(256)
-                        .HasColumnType("character varying(256)")
-                        .HasColumnName("normalized_user_name");
+                        .HasColumnType("character varying(256)");
 
                     b.Property<string>("PasswordHash")
-                        .HasColumnType("text")
-                        .HasColumnName("password_hash");
+                        .HasColumnType("text");
 
                     b.Property<string>("PhoneNumber")
-                        .HasColumnType("text")
-                        .HasColumnName("phone_number");
+                        .HasColumnType("text");
 
                     b.Property<bool>("PhoneNumberConfirmed")
-                        .HasColumnType("boolean")
-                        .HasColumnName("phone_number_confirmed");
+                        .HasColumnType("boolean");
 
                     b.Property<string>("SecurityStamp")
-                        .HasColumnType("text")
-                        .HasColumnName("security_stamp");
+                        .HasColumnType("text");
 
                     b.Property<bool>("TwoFactorEnabled")
-                        .HasColumnType("boolean")
-                        .HasColumnName("two_factor_enabled");
+                        .HasColumnType("boolean");
 
                     b.Property<string>("UserName")
                         .HasMaxLength(256)
-                        .HasColumnType("character varying(256)")
-                        .HasColumnName("user_name");
+                        .HasColumnType("character varying(256)");
 
-                    b.HasKey("Id")
-                        .HasName("pk_asp_net_users");
+                    b.HasKey("Id");
 
                     b.HasIndex("NormalizedEmail")
                         .HasDatabaseName("EmailIndex");
@@ -314,293 +263,230 @@ namespace WebApplication1.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
+                        .HasColumnType("uuid");
 
                     b.Property<Guid>("CarId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("car_id");
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime>("EndDate")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("end_date");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<bool>("IsDeleted")
-                        .HasColumnType("boolean")
-                        .HasColumnName("is_deleted");
+                        .HasColumnType("boolean");
 
                     b.Property<DateTime?>("PickupTime")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("pickup_time");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<Guid>("RentalLocationId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("rental_location_id");
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime?>("ReturnTime")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("return_time");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<DateTime>("StartDate")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("start_date");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<decimal>("TotalPrice")
-                        .HasColumnType("numeric")
-                        .HasColumnName("total_price");
+                        .HasColumnType("numeric");
 
                     b.Property<string>("UserId")
                         .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("user_id");
+                        .HasColumnType("text");
 
-                    b.HasKey("Id")
-                        .HasName("pk_bookings");
+                    b.HasKey("Id");
 
-                    b.HasIndex("CarId")
-                        .HasDatabaseName("ix_bookings_car_id");
+                    b.HasIndex("CarId");
 
-                    b.HasIndex("RentalLocationId")
-                        .HasDatabaseName("ix_bookings_rental_location_id");
+                    b.HasIndex("RentalLocationId");
 
-                    b.HasIndex("UserId")
-                        .HasDatabaseName("ix_bookings_user_id");
+                    b.HasIndex("UserId");
 
-                    b.ToTable("bookings", (string)null);
+                    b.ToTable("Bookings");
                 });
 
             modelBuilder.Entity("WebApplication1.Data.Models.BookingAdditionalService", b =>
                 {
                     b.Property<Guid>("BookingId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("booking_id");
+                        .HasColumnType("uuid");
 
                     b.Property<Guid>("AdditionalServiceId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("additional_service_id");
+                        .HasColumnType("uuid");
 
-                    b.HasKey("BookingId", "AdditionalServiceId")
-                        .HasName("pk_booking_additional_services");
+                    b.HasKey("BookingId", "AdditionalServiceId");
 
-                    b.HasIndex("AdditionalServiceId")
-                        .HasDatabaseName("ix_booking_additional_services_additional_service_id");
+                    b.HasIndex("AdditionalServiceId");
 
-                    b.ToTable("booking_additional_services", (string)null);
+                    b.ToTable("BookingAdditionalServices");
                 });
 
             modelBuilder.Entity("WebApplication1.Data.Models.Car", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
+                        .HasColumnType("uuid");
 
                     b.Property<Guid>("CarModelId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("car_model_id");
+                        .HasColumnType("uuid");
 
                     b.Property<bool>("IsAvailable")
-                        .HasColumnType("boolean")
-                        .HasColumnName("is_available");
+                        .HasColumnType("boolean");
 
                     b.Property<bool>("IsDeleted")
-                        .HasColumnType("boolean")
-                        .HasColumnName("is_deleted");
+                        .HasColumnType("boolean");
 
                     b.Property<Guid>("RentalLocationId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("rental_location_id");
+                        .HasColumnType("uuid");
 
-                    b.HasKey("Id")
-                        .HasName("pk_cars");
+                    b.HasKey("Id");
 
-                    b.HasIndex("CarModelId")
-                        .HasDatabaseName("ix_cars_car_model_id");
+                    b.HasIndex("CarModelId");
 
-                    b.HasIndex("RentalLocationId")
-                        .HasDatabaseName("ix_cars_rental_location_id");
+                    b.HasIndex("RentalLocationId");
 
-                    b.ToTable("cars", (string)null);
+                    b.ToTable("Cars");
                 });
 
             modelBuilder.Entity("WebApplication1.Data.Models.CarImage", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
+                        .HasColumnType("uuid");
 
                     b.Property<Guid>("CarId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("car_id");
+                        .HasColumnType("uuid");
 
                     b.Property<string>("Url")
                         .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("url");
+                        .HasColumnType("text");
 
-                    b.HasKey("Id")
-                        .HasName("pk_car_images");
+                    b.HasKey("Id");
 
-                    b.HasIndex("CarId")
-                        .HasDatabaseName("ix_car_images_car_id");
+                    b.HasIndex("CarId");
 
-                    b.ToTable("car_images", (string)null);
+                    b.ToTable("CarImages");
                 });
 
             modelBuilder.Entity("WebApplication1.Data.Models.CarModel", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
+                        .HasColumnType("uuid");
 
                     b.Property<double>("FuelConsumptionPer100Km")
-                        .HasColumnType("double precision")
-                        .HasColumnName("fuel_consumption_per100km");
+                        .HasColumnType("double precision");
 
                     b.Property<string>("Make")
                         .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("make");
+                        .HasColumnType("text");
 
                     b.Property<string>("ModelName")
                         .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("model_name");
+                        .HasColumnType("text");
 
                     b.Property<int>("SeatingCapacity")
-                        .HasColumnType("integer")
-                        .HasColumnName("seating_capacity");
+                        .HasColumnType("integer");
 
                     b.Property<string>("Transmission")
                         .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("transmission");
+                        .HasColumnType("text");
 
                     b.Property<int>("Year")
-                        .HasColumnType("integer")
-                        .HasColumnName("year");
+                        .HasColumnType("integer");
 
-                    b.HasKey("Id")
-                        .HasName("pk_car_models");
+                    b.HasKey("Id");
 
-                    b.ToTable("car_models", (string)null);
+                    b.ToTable("CarModels");
                 });
 
             modelBuilder.Entity("WebApplication1.Data.Models.RentalLocation", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
+                        .HasColumnType("uuid");
 
                     b.Property<string>("Address")
                         .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("address");
+                        .HasColumnType("text");
 
                     b.Property<string>("City")
                         .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("city");
+                        .HasColumnType("text");
 
                     b.Property<string>("Country")
                         .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("country");
+                        .HasColumnType("text");
 
                     b.Property<bool>("IsDeleted")
-                        .HasColumnType("boolean")
-                        .HasColumnName("is_deleted");
+                        .HasColumnType("boolean");
 
                     b.Property<double?>("Latitude")
-                        .HasColumnType("double precision")
-                        .HasColumnName("latitude");
+                        .HasColumnType("double precision");
 
                     b.Property<double?>("Longitude")
-                        .HasColumnType("double precision")
-                        .HasColumnName("longitude");
+                        .HasColumnType("double precision");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("name");
+                        .HasColumnType("text");
 
-                    b.HasKey("Id")
-                        .HasName("pk_rental_locations");
+                    b.HasKey("Id");
 
-                    b.ToTable("rental_locations", (string)null);
+                    b.ToTable("RentalLocations");
                 });
 
             modelBuilder.Entity("WebApplication1.Data.Models.RentalPrice", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
+                        .HasColumnType("uuid");
 
                     b.Property<Guid>("CarId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("car_id");
+                        .HasColumnType("uuid");
 
                     b.Property<decimal>("Price")
-                        .HasColumnType("numeric")
-                        .HasColumnName("price");
+                        .HasColumnType("numeric");
 
                     b.Property<int>("PriceType")
-                        .HasColumnType("integer")
-                        .HasColumnName("price_type");
+                        .HasColumnType("integer");
 
-                    b.HasKey("Id")
-                        .HasName("pk_rental_prices");
+                    b.HasKey("Id");
 
-                    b.HasIndex("CarId")
-                        .HasDatabaseName("ix_rental_prices_car_id");
+                    b.HasIndex("CarId");
 
-                    b.ToTable("rental_prices", (string)null);
+                    b.ToTable("RentalPrices");
                 });
 
             modelBuilder.Entity("WebApplication1.Data.Models.Review", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
+                        .HasColumnType("uuid");
 
                     b.Property<string>("Comment")
-                        .HasColumnType("text")
-                        .HasColumnName("comment");
+                        .HasColumnType("text");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("Rating")
-                        .HasColumnType("integer")
-                        .HasColumnName("rating");
+                        .HasColumnType("integer");
 
                     b.Property<Guid>("RentalLocationId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("rental_location_id");
+                        .HasColumnType("uuid");
 
                     b.Property<string>("UserId")
                         .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("user_id");
+                        .HasColumnType("text");
 
-                    b.HasKey("Id")
-                        .HasName("pk_reviews");
+                    b.HasKey("Id");
 
-                    b.HasIndex("RentalLocationId")
-                        .HasDatabaseName("ix_reviews_rental_location_id");
+                    b.HasIndex("RentalLocationId");
 
-                    b.HasIndex("UserId")
-                        .HasDatabaseName("ix_reviews_user_id");
+                    b.HasIndex("UserId");
 
-                    b.ToTable("reviews", null, t =>
+                    b.ToTable("Reviews", t =>
                         {
-                            t.HasCheckConstraint("CK_Review_Rating_Range", "rating >= 1 AND rating <= 5");
+                            t.HasCheckConstraint("CK_Review_Rating_Range", "\"Rating\" >= 1 AND \"Rating\" <= 5");
                         });
                 });
 
@@ -610,8 +496,7 @@ namespace WebApplication1.Migrations
                         .WithMany()
                         .HasForeignKey("RoleId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_asp_net_role_claims_asp_net_roles_role_id");
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
@@ -620,8 +505,7 @@ namespace WebApplication1.Migrations
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_asp_net_user_claims_asp_net_users_user_id");
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
@@ -630,8 +514,7 @@ namespace WebApplication1.Migrations
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_asp_net_user_logins_asp_net_users_user_id");
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserRole<string>", b =>
@@ -640,15 +523,13 @@ namespace WebApplication1.Migrations
                         .WithMany()
                         .HasForeignKey("RoleId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_asp_net_user_roles_asp_net_roles_role_id");
+                        .IsRequired();
 
                     b.HasOne("WebApplication1.Data.Models.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_asp_net_user_roles_asp_net_users_user_id");
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
@@ -657,8 +538,7 @@ namespace WebApplication1.Migrations
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_asp_net_user_tokens_asp_net_users_user_id");
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("WebApplication1.Data.Models.AdditionalService", b =>
@@ -667,8 +547,7 @@ namespace WebApplication1.Migrations
                         .WithMany("AdditionalServices")
                         .HasForeignKey("RentalLocationId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_additional_services_rental_locations_rental_location_id");
+                        .IsRequired();
 
                     b.Navigation("RentalLocation");
                 });
@@ -679,22 +558,19 @@ namespace WebApplication1.Migrations
                         .WithMany("Bookings")
                         .HasForeignKey("CarId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_bookings_cars_car_id");
+                        .IsRequired();
 
                     b.HasOne("WebApplication1.Data.Models.RentalLocation", "RentalLocation")
                         .WithMany()
                         .HasForeignKey("RentalLocationId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_bookings_rental_locations_rental_location_id");
+                        .IsRequired();
 
                     b.HasOne("WebApplication1.Data.Models.ApplicationUser", "User")
                         .WithMany("Bookings")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("fk_bookings_users_user_id");
+                        .IsRequired();
 
                     b.Navigation("Car");
 
@@ -709,15 +585,13 @@ namespace WebApplication1.Migrations
                         .WithMany("BookingServices")
                         .HasForeignKey("AdditionalServiceId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_booking_additional_services_additional_services_additional_");
+                        .IsRequired();
 
                     b.HasOne("WebApplication1.Data.Models.Booking", "Booking")
                         .WithMany("BookingServices")
                         .HasForeignKey("BookingId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_booking_additional_services_bookings_booking_id");
+                        .IsRequired();
 
                     b.Navigation("AdditionalService");
 
@@ -730,15 +604,13 @@ namespace WebApplication1.Migrations
                         .WithMany("Cars")
                         .HasForeignKey("CarModelId")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("fk_cars_car_models_car_model_id");
+                        .IsRequired();
 
                     b.HasOne("WebApplication1.Data.Models.RentalLocation", "RentalLocation")
                         .WithMany("Cars")
                         .HasForeignKey("RentalLocationId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_cars_rental_locations_rental_location_id");
+                        .IsRequired();
 
                     b.Navigation("CarModel");
 
@@ -751,8 +623,7 @@ namespace WebApplication1.Migrations
                         .WithMany("Images")
                         .HasForeignKey("CarId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_car_images_cars_car_id");
+                        .IsRequired();
 
                     b.Navigation("Car");
                 });
@@ -763,8 +634,7 @@ namespace WebApplication1.Migrations
                         .WithMany("RentalPrices")
                         .HasForeignKey("CarId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_rental_prices_cars_car_id");
+                        .IsRequired();
 
                     b.Navigation("Car");
                 });
@@ -775,15 +645,13 @@ namespace WebApplication1.Migrations
                         .WithMany("Reviews")
                         .HasForeignKey("RentalLocationId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_reviews_rental_locations_rental_location_id");
+                        .IsRequired();
 
                     b.HasOne("WebApplication1.Data.Models.ApplicationUser", "User")
                         .WithMany("Reviews")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("fk_reviews_users_user_id");
+                        .IsRequired();
 
                     b.Navigation("RentalLocation");
 

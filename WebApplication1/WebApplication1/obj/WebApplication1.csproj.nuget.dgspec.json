@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "/home/a/RiderProjects/WebApplication1/WebApplication1/WebApplication1.csproj": {}
+    "/home/a/carRent/WebApplication1/WebApplication1/WebApplication1.csproj": {}
   },
   "projects": {
-    "/home/a/RiderProjects/WebApplication1/WebApplication1/WebApplication1.csproj": {
+    "/home/a/carRent/WebApplication1/WebApplication1/WebApplication1.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "/home/a/RiderProjects/WebApplication1/WebApplication1/WebApplication1.csproj",
+        "projectUniqueName": "/home/a/carRent/WebApplication1/WebApplication1/WebApplication1.csproj",
         "projectName": "WebApplication1",
-        "projectPath": "/home/a/RiderProjects/WebApplication1/WebApplication1/WebApplication1.csproj",
+        "projectPath": "/home/a/carRent/WebApplication1/WebApplication1/WebApplication1.csproj",
         "packagesPath": "/home/a/.nuget/packages/",
-        "outputPath": "/home/a/RiderProjects/WebApplication1/WebApplication1/obj/",
+        "outputPath": "/home/a/carRent/WebApplication1/WebApplication1/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "/home/a/.nuget/NuGet/NuGet.Config"

@@ -11,7 +11,9 @@ namespace WebApplication1.Data.Context
 
         public DbSet<RentalLocation> RentalLocations { get; set; }
         public DbSet<Car> Cars { get; set; }
+        public DbSet<CarModel> CarModels { get; set; } 
         public DbSet<CarImage> CarImages { get; set; }
+        public DbSet<RentalPrice> RentalPrices { get; set; }
         public DbSet<AdditionalService> AdditionalServices { get; set; }
         public DbSet<Booking> Bookings { get; set; }
         public DbSet<BookingAdditionalService> BookingAdditionalServices { get; set; }
@@ -21,16 +23,19 @@ namespace WebApplication1.Data.Context
         {
             base.OnModelCreating(builder);
 
-            // сохранять как строку
-            builder.Entity<Car>()
-                .Property(c => c.Transmission)
+            builder.Entity<CarModel>()
+                .Property(cm => cm.Transmission)
                 .HasConversion<string>();
 
-            // составной ключ
+            builder.Entity<Car>()
+                .HasOne(c => c.CarModel)
+                .WithMany(cm => cm.Cars)
+                .HasForeignKey(c => c.CarModelId)
+                .OnDelete(DeleteBehavior.Restrict); 
+
             builder.Entity<BookingAdditionalService>()
                 .HasKey(bas => new { bas.BookingId, bas.AdditionalServiceId });
 
-            // многие ко многим
             builder.Entity<BookingAdditionalService>()
                 .HasOne(bas => bas.Booking)
                 .WithMany(b => b.BookingServices)
@@ -41,7 +46,6 @@ namespace WebApplication1.Data.Context
                 .WithMany(a => a.BookingServices)
                 .HasForeignKey(bas => bas.AdditionalServiceId);
 
-            // предотвратить каскадное удаление, навсякий хз надо ли
             builder.Entity<Booking>()
                 .HasOne(b => b.User)
                 .WithMany(u => u.Bookings)
@@ -53,6 +57,15 @@ namespace WebApplication1.Data.Context
                 .WithMany(u => u.Reviews)
                 .HasForeignKey(r => r.UserId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<Review>()
+                .ToTable(t => t.HasCheckConstraint("CK_Review_Rating_Range", "rating >= 1 AND rating <= 5"));
+            
+            builder.Entity<RentalPrice>()
+                .HasOne(rp => rp.Car)
+                .WithMany(c => c.RentalPrices)
+                .HasForeignKey(rp => rp.CarId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

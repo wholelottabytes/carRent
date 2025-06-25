@@ -5,7 +5,10 @@ namespace WebApplication1.Data.Models
 {
     public class RentalLocation
     {
-        public int Id { get; set; }
+        [Key]
+        public Guid Id { get; set; } = Guid.NewGuid();
+        
+        public bool IsDeleted { get; set; } = false;
 
         [Required]
         public string Country { get; set; } = null!;
@@ -18,6 +21,9 @@ namespace WebApplication1.Data.Models
 
         [Required]
         public string Address { get; set; } = null!;
+
+        public double? Latitude { get; set; }
+        public double? Longitude { get; set; }
 
         public ICollection<Car>? Cars { get; set; }
         public ICollection<AdditionalService>? AdditionalServices { get; set; }

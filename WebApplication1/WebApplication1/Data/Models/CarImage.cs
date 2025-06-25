@@ -4,13 +4,14 @@ namespace WebApplication1.Data.Models
 {
     public class CarImage
     {
-        public int Id { get; set; }
+        [Key]
+        public Guid Id { get; set; } = Guid.NewGuid();
 
         [Required]
         public string Url { get; set; } = null!;
 
         // Foreign key
-        public int CarId { get; set; }
+        public Guid  CarId { get; set; }
         public Car? Car { get; set; }
     }
 }

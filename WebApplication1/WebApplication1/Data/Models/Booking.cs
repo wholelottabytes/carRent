@@ -6,7 +6,9 @@ namespace WebApplication1.Data.Models
 {
     public class Booking
     {
-        public int Id { get; set; }
+        [Key]
+        public Guid Id { get; set; } = Guid.NewGuid();
+        public bool IsDeleted { get; set; } = false;
 
         // Booking period
         [Required]
@@ -20,17 +22,18 @@ namespace WebApplication1.Data.Models
         public ApplicationUser? User { get; set; }
 
         [Required]
-        public int CarId { get; set; }
+        public Guid CarId { get; set; }
         public Car? Car { get; set; }
 
         [Required]
-        public int RentalLocationId { get; set; }
+        public Guid RentalLocationId { get; set; }
         public RentalLocation? RentalLocation { get; set; }
 
         // Key pickup times
         public DateTime? PickupTime { get; set; }
         public DateTime? ReturnTime { get; set; }
-
+        
+        
         // Calculated total price
         public decimal TotalPrice { get; set; }
 

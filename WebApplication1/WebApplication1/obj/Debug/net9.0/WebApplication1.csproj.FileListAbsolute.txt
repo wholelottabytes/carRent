@@ -134,3 +134,12 @@
 /home/a/RiderProjects/WebApplication1/WebApplication1/bin/Debug/net9.0/Microsoft.AspNetCore.Identity.EntityFrameworkCore.dll
 /home/a/RiderProjects/WebApplication1/WebApplication1/bin/Debug/net9.0/Microsoft.Extensions.Identity.Core.dll
 /home/a/RiderProjects/WebApplication1/WebApplication1/bin/Debug/net9.0/Microsoft.Extensions.Identity.Stores.dll
+/home/a/RiderProjects/WebApplication1/WebApplication1/bin/Debug/net9.0/EFCore.NamingConventions.dll
+/home/a/RiderProjects/WebApplication1/WebApplication1/bin/Debug/net9.0/Microsoft.AspNetCore.Authentication.JwtBearer.dll
+/home/a/RiderProjects/WebApplication1/WebApplication1/bin/Debug/net9.0/Microsoft.IdentityModel.Abstractions.dll
+/home/a/RiderProjects/WebApplication1/WebApplication1/bin/Debug/net9.0/Microsoft.IdentityModel.JsonWebTokens.dll
+/home/a/RiderProjects/WebApplication1/WebApplication1/bin/Debug/net9.0/Microsoft.IdentityModel.Logging.dll
+/home/a/RiderProjects/WebApplication1/WebApplication1/bin/Debug/net9.0/Microsoft.IdentityModel.Protocols.dll
+/home/a/RiderProjects/WebApplication1/WebApplication1/bin/Debug/net9.0/Microsoft.IdentityModel.Protocols.OpenIdConnect.dll
+/home/a/RiderProjects/WebApplication1/WebApplication1/bin/Debug/net9.0/Microsoft.IdentityModel.Tokens.dll
+/home/a/RiderProjects/WebApplication1/WebApplication1/bin/Debug/net9.0/System.IdentityModel.Tokens.Jwt.dll

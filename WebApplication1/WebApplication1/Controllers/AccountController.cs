@@ -35,8 +35,6 @@ namespace WebApplication1.API.Controllers
         [HttpPost]
         public async Task<ActionResult<RegisterResponseDto>> Register([FromBody] RegisterDto dto)
         {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
 
             var user = new ApplicationUser
             {

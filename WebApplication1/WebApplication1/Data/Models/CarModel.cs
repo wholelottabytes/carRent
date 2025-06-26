@@ -12,7 +12,7 @@ namespace WebApplication1.Data.Models
     {
         [Key]
         public Guid Id { get; set; } = Guid.NewGuid();
-
+        public bool IsDeleted { get; set; } = false;
         [Required]
         public string Make { get; set; } = null!; 
 

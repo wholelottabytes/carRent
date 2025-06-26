@@ -12,6 +12,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using WebApplication1.Common.Constants;
 using WebApplication1.Common.Extensions;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -45,8 +46,26 @@ builder.Services.AddAuthentication(options =>
 // DI
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<UserService>();
-builder.Services.AddControllers();
+builder.Services.AddScoped<IRentalLocationRepository, RentalLocationRepository>();
+builder.Services.AddScoped<IRentalLocationService, RentalLocationService>();
 
+builder.Services.AddScoped<ICarModelRepository, CarModelRepository>();
+builder.Services.AddScoped<ICarModelService, CarModelService>();
+
+builder.Services.AddScoped<ICarRepository, CarRepository>();
+builder.Services.AddScoped<ICarService, CarService>();
+
+builder.Services.AddScoped<IRentalPriceRepository, RentalPriceRepository>();
+builder.Services.AddScoped<IRentalPriceService, RentalPriceService>();
+
+builder.Services.AddScoped<IAdditionalServiceRepository, AdditionalServiceRepository>();
+builder.Services.AddScoped<IAdditionalServiceService, AdditionalServiceService>();
+builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    });
 var app = builder.Build();
 
 await app.Services.SeedIdentityAsync();

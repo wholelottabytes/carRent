@@ -12,8 +12,8 @@ using WebApplication1.Data.Context;
 namespace WebApplication1.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250625165229_Seed")]
-    partial class Seed
+    [Migration("20250626133754_PriceCarLink")]
+    partial class PriceCarLink
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -375,6 +375,9 @@ namespace WebApplication1.Migrations
                     b.Property<double>("FuelConsumptionPer100Km")
                         .HasColumnType("double precision");
 
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("Make")
                         .IsRequired()
                         .HasColumnType("text");
@@ -630,13 +633,11 @@ namespace WebApplication1.Migrations
 
             modelBuilder.Entity("WebApplication1.Data.Models.RentalPrice", b =>
                 {
-                    b.HasOne("WebApplication1.Data.Models.Car", "Car")
+                    b.HasOne("WebApplication1.Data.Models.Car", null)
                         .WithMany("RentalPrices")
                         .HasForeignKey("CarId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Car");
                 });
 
             modelBuilder.Entity("WebApplication1.Data.Models.Review", b =>

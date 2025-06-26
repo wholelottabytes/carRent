@@ -372,6 +372,9 @@ namespace WebApplication1.Migrations
                     b.Property<double>("FuelConsumptionPer100Km")
                         .HasColumnType("double precision");
 
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("Make")
                         .IsRequired()
                         .HasColumnType("text");
@@ -627,13 +630,11 @@ namespace WebApplication1.Migrations
 
             modelBuilder.Entity("WebApplication1.Data.Models.RentalPrice", b =>
                 {
-                    b.HasOne("WebApplication1.Data.Models.Car", "Car")
+                    b.HasOne("WebApplication1.Data.Models.Car", null)
                         .WithMany("RentalPrices")
                         .HasForeignKey("CarId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Car");
                 });
 
             modelBuilder.Entity("WebApplication1.Data.Models.Review", b =>

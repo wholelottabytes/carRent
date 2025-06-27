@@ -13,5 +13,6 @@ namespace WebApplication1.Business.Services
         Task<Car> GetByIdAsync(Guid id);
         Task UpdateAsync(Guid id, UpdateCarDto dto);
         Task DeleteAsync(Guid id);
+        
     }
 }

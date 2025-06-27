@@ -25,6 +25,11 @@ namespace WebApplication1.API.Controllers
             return NoContent();
         }
 
+        [HttpGet("{locationId:guid}")]
+        public async Task<IEnumerable<AdditionalService>> GetByLocation(Guid locationId)
+        {
+            return await _svc.GetByLocationIdAsync(locationId);
+        }
         [HttpPut("{id:guid}")]
         public async Task<IActionResult> Update(Guid id, [FromBody] UpdateAdditionalServiceDto dto)
         {

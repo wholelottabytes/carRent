@@ -55,6 +55,9 @@ builder.Services.AddScoped<ICarModelService, CarModelService>();
 builder.Services.AddScoped<ICarRepository, CarRepository>();
 builder.Services.AddScoped<ICarService, CarService>();
 
+builder.Services.AddScoped<ICarImageRepository, CarImageRepository>();
+builder.Services.AddScoped<ICarImageService, CarImageService>();
+
 builder.Services.AddScoped<IRentalPriceRepository, RentalPriceRepository>();
 builder.Services.AddScoped<IRentalPriceService, RentalPriceService>();
 
@@ -69,7 +72,7 @@ builder.Services.AddControllers()
 var app = builder.Build();
 
 await app.Services.SeedIdentityAsync();
-
+app.UseStaticFiles();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

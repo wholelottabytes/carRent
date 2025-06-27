@@ -29,7 +29,12 @@ namespace WebApplication1.API.Controllers
         public Task<IEnumerable<Car>> List() => _svc.ListAsync();
 
         [HttpGet("{id:guid}")]
-        public Task<Car> Get(Guid id) => _svc.GetByIdAsync(id);
+        public async Task<ActionResult<CarWithCarModelDto>> Get(Guid id)
+        {
+            var car = await _svc.GetByIdAsync(id);
+            var dto = DtoMapper.ToDtoWithCar(car);
+            return Ok(dto);
+        }
 
         [HttpPut("{id:guid}")]
         public async Task<IActionResult> Update(Guid id, [FromBody] UpdateCarDto dto)

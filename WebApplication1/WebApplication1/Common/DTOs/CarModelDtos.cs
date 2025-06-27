@@ -14,6 +14,16 @@ namespace WebApplication1.Common.DTOs
         public double FuelConsumptionPer100Km { get; set; }
         public List<CarDto>? Cars { get; set; }
     }
+    public class CarModelWithoutCarsDto
+    {
+        public Guid Id { get; set; }
+        public string Make { get; set; }
+        public string ModelName { get; set; }
+        public int Year { get; set; }
+        public TransmissionType Transmission { get; set; }
+        public int SeatingCapacity { get; set; }
+        public double FuelConsumptionPer100Km { get; set; }
+    }
     public class CreateCarModelDto
     {
         [Required] public string Make   { get; set; } = null!;

@@ -289,3 +289,4 @@
 /home/a/carRent/WebApplication1/WebApplication1/obj/Debug/net9.0/WebApplication1.pdb
 /home/a/carRent/WebApplication1/WebApplication1/obj/Debug/net9.0/WebApplication1.genruntimeconfig.cache
 /home/a/carRent/WebApplication1/WebApplication1/obj/Debug/net9.0/ref/WebApplication1.dll
+/home/a/carRent/WebApplication1/WebApplication1/bin/Debug/net9.0/WebApplication1.staticwebassets.runtime.json

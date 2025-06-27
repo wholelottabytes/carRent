@@ -17,6 +17,9 @@ public class RentalLocationService : IRentalLocationService
     }
     public Task<IEnumerable<RentalLocation>> ListAsync() => _repo.ListAsync();
     public Task<RentalLocation> GetByIdAsync(Guid id) => _repo.GetByIdAsync(id);
+    
+    public Task<IEnumerable<Car>> GetAvailableCarsAsync(Guid locationId) =>
+        _repo.GetAvailableCarsAsync(locationId);
     public async Task UpdateAsync(Guid id, UpdateRentalLocationDto dto)
     {
         var loc = await _repo.GetByIdAsync(id);
@@ -25,4 +28,9 @@ public class RentalLocationService : IRentalLocationService
         await _repo.UpdateAsync(loc);
     }
     public async Task DeleteAsync(Guid id) => await _repo.SoftDeleteAsync(await _repo.GetByIdAsync(id));
+    
+    public async Task<IEnumerable<RentalLocation>> SearchAsync(string? country, string? city, DateTime? startDate, DateTime? endDate)
+    {
+        return await _repo.SearchAsync(country, city, startDate, endDate);
+    }
 }

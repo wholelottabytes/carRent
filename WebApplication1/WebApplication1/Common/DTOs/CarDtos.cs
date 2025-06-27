@@ -6,6 +6,7 @@ namespace WebApplication1.Common.DTOs
     {
         public Guid Id { get; set; }
         public string ModelName { get; set; } = null!;
+        public string Make { get; set; } = null!;
         public bool IsAvailable { get; set; }
     }
     public class CarDto
@@ -13,6 +14,15 @@ namespace WebApplication1.Common.DTOs
         public Guid Id { get; set; }
         public bool IsAvailable { get; set; }
         public Guid CarModelId { get; set; }
+        public List<RentalPriceDto>? RentalPrices { get; set; }
+    }
+    public class CarWithCarModelDto
+    {
+        public Guid Id { get; set; }
+        public bool IsAvailable { get; set; }
+        public Guid CarModelId { get; set; }
+        public CarModelWithoutCarsDto? CarModel { get; set; }
+
         public List<RentalPriceDto>? RentalPrices { get; set; }
     }
     public class CreateCarDto

@@ -12,5 +12,6 @@ namespace WebApplication1.Business.Services
         Task<AdditionalService> GetByIdAsync(Guid id);
         Task UpdateAsync(Guid id, UpdateAdditionalServiceDto dto);
         Task DeleteAsync(Guid id);
+        Task<IEnumerable<AdditionalService>> GetByLocationIdAsync(Guid locationId);
     }
 }

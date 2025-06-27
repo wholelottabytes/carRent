@@ -25,7 +25,10 @@ namespace WebApplication1.Business.Services
             return svc;
         }
 
-
+        public async Task<IEnumerable<AdditionalService>> GetByLocationIdAsync(Guid locationId)
+        {
+            return await _repo.GetByLocationIdAsync(locationId);
+        }
         public Task<AdditionalService> GetByIdAsync(Guid id) => _repo.GetByIdAsync(id);
 
         public async Task UpdateAsync(Guid id, UpdateAdditionalServiceDto dto)

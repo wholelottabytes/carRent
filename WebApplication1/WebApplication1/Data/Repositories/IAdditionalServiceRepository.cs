@@ -11,5 +11,7 @@ namespace WebApplication1.Data.Repositories
         Task AddAsync(AdditionalService service);
         Task UpdateAsync(AdditionalService service);
         Task SoftDeleteAsync(AdditionalService service);
+        Task<IEnumerable<AdditionalService>> GetByLocationIdAsync(Guid locationId);
+
     }
 }

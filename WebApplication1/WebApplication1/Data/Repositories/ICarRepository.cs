@@ -7,6 +7,7 @@ namespace WebApplication1.Data.Repositories
 {
     public interface ICarRepository
     {
+        
         Task<Car> GetByIdAsync(Guid id);
         Task<IEnumerable<Car>> ListAsync();
         Task AddAsync(Car car);

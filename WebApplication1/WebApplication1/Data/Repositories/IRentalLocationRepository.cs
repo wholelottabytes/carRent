@@ -9,4 +9,7 @@ public interface IRentalLocationRepository
     Task AddAsync(RentalLocation loc);
     Task UpdateAsync(RentalLocation loc);
     Task SoftDeleteAsync(RentalLocation loc);
+    Task<IEnumerable<Car>> GetAvailableCarsAsync(Guid locationId);
+    Task<IEnumerable<RentalLocation>> SearchAsync(string? country, string? city, DateTime? startDate, DateTime? endDate);
+
 }

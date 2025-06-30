@@ -13,6 +13,7 @@ using System.Text;
 using WebApplication1.Common.Constants;
 using WebApplication1.Common.Extensions;
 using System.Text.Json.Serialization;
+using WebApplication1.Common.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -73,6 +74,7 @@ var app = builder.Build();
 
 await app.Services.SeedIdentityAsync();
 app.UseStaticFiles();
+app.UseExceptionHandling();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

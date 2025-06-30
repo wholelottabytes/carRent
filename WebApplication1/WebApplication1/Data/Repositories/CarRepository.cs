@@ -21,8 +21,9 @@ namespace WebApplication1.Data.Repositories
         public async Task<Car> GetByIdAsync(Guid id) =>
             await _ctx.Cars
                 .Include(c=>c.CarModel)
-                .Include(c => c.Images)
-                .Include(c => c.RentalPrices)
+                .ThenInclude(c => c.Images)
+                .Include(c=>c.CarModel)
+                .ThenInclude(c => c.RentalPrices)
                 .FirstOrDefaultAsync(c => c.Id == id && !c.IsDeleted)
             ?? throw new KeyNotFoundException();
 

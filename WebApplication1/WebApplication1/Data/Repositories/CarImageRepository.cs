@@ -1,45 +1,35 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using WebApplication1.Data.Context;
 using WebApplication1.Data.Models;
+using WebApplication1.Data.Repositories;
 
-namespace WebApplication1.Data.Repositories
+public class CarImageRepository : ICarImageRepository
 {
+    private readonly ApplicationDbContext _ctx;
 
-    public class CarImageRepository : ICarImageRepository
+    public CarImageRepository(ApplicationDbContext ctx) => _ctx = ctx;
+
+    public async Task AddAsync(CarImage image)
     {
-        private readonly ApplicationDbContext _ctx;
+        _ctx.CarImages.Add(image);
+        await _ctx.SaveChangesAsync();
+    }
 
-        public CarImageRepository(ApplicationDbContext ctx) => _ctx = ctx;
+    public async Task DeleteAsync(CarImage image)
+    {
+        _ctx.CarImages.Remove(image);
+        await _ctx.SaveChangesAsync();
+    }
 
-        public async Task AddAsync(CarImage image)
-        {
-            _ctx.CarImages.Add(image);
-            await _ctx.SaveChangesAsync();
-        }
+    public async Task<CarImage?> GetByIdAsync(Guid id)
+    {
+        return await _ctx.CarImages.FindAsync(id);
+    }
 
-        public async Task DeleteAsync(Guid id)
-        {
-            var image = await _ctx.CarImages.FindAsync(id) 
-                        ?? throw new KeyNotFoundException($"Image with id {id} not found");
-            _ctx.CarImages.Remove(image);
-            await _ctx.SaveChangesAsync();
-        }
-
-        public async Task<CarImage> GetByIdAsync(Guid id)
-        {
-            return await _ctx.CarImages.FindAsync(id) 
-                   ?? throw new KeyNotFoundException($"Image with id {id} not found");
-        }
-
-        public async Task<IEnumerable<CarImage>> GetByCarIdAsync(Guid carId)
-        {
-            return await _ctx.CarImages
-                .Where(i => i.CarId == carId)
-                .ToListAsync();
-        }
+    public async Task<IEnumerable<CarImage>> GetByCarIdAsync(Guid carId)
+    {
+        return await _ctx.CarImages
+            .Where(i => i.CarModelId == carId)
+            .ToListAsync();
     }
 }

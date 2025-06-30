@@ -1,8 +1,8 @@
 using Microsoft.EntityFrameworkCore;
+using WebApplication1.Common.DTOs;
 using WebApplication1.Data.Context;
 using WebApplication1.Data.Models;
-
-namespace WebApplication1.Data.Repositories;
+using WebApplication1.Data.Repositories;
 
 public class RentalLocationRepository : IRentalLocationRepository
 {
@@ -16,41 +16,24 @@ public class RentalLocationRepository : IRentalLocationRepository
         await _ctx.SaveChangesAsync();
     }
 
-    public async Task<RentalLocation> GetByIdAsync(Guid id) =>
-        await _ctx.RentalLocations
+    public async Task<RentalLocation?> GetByIdAsync(Guid id)
+    {
+        return await _ctx.RentalLocations
             .Include(r => r.Cars.Where(c => !c.IsDeleted))
             .ThenInclude(c => c.CarModel)
-            .FirstOrDefaultAsync(r => r.Id == id && !r.IsDeleted)
-        ?? throw new KeyNotFoundException();
-
-    public async Task<IEnumerable<Car>> GetAvailableCarsAsync(Guid locationId)
-    {
-        var now = DateTime.UtcNow; 
-
-        return await _ctx.Cars
-            .Include(c => c.CarModel)
-            .Include(c => c.RentalPrices)
-            .Include(c => c.Bookings)
-            .Where(c =>
-                c.RentalLocationId == locationId &&
-                !c.IsDeleted &&
-                c.IsAvailable &&
-                !c.Bookings.Any(b => 
-                    !b.IsDeleted && 
-                    b.StartDate <= now && 
-                    b.EndDate >= now
-                )
-            )
-            .ToListAsync();
+            .FirstOrDefaultAsync(r => r.Id == id && !r.IsDeleted);
     }
     
 
-    public async Task<IEnumerable<RentalLocation>> ListAsync() =>
-        await _ctx.RentalLocations
+
+    public async Task<IEnumerable<RentalLocation>> ListAsync()
+    {
+        return await _ctx.RentalLocations
             .Include(r => r.Cars.Where(c => !c.IsDeleted))
             .ThenInclude(c => c.CarModel)
             .Where(r => !r.IsDeleted)
             .ToListAsync();
+    }
 
     public async Task UpdateAsync(RentalLocation loc)
     {
@@ -64,29 +47,54 @@ public class RentalLocationRepository : IRentalLocationRepository
         await UpdateAsync(loc);
     }
 
-    public async Task<IEnumerable<RentalLocation>> SearchAsync(string? country, string? city, DateTime? startDate, DateTime? endDate)
+    public async Task<(IEnumerable<CarModelSummaryDto> Items, int TotalCount)> SearchCarModelsAsync(
+        string? country, string? city, DateTime? startDate, DateTime? endDate, int page, int pageSize)
     {
-        var query = _ctx.RentalLocations
-            .Include(r => r.Cars.Where(c => !c.IsDeleted && c.IsAvailable))
-            .ThenInclude(c => c.CarModel)
-            .Where(r => !r.IsDeleted)
-            .AsQueryable();
+        var query = _ctx.Cars
+            .Include(c => c.CarModel)
+            .ThenInclude(cm => cm.RentalPrices)
+            .Include(c => c.RentalLocation)
+            .Include(c => c.Bookings)
+            .Where(c => !c.IsDeleted && c.IsEnabled);
 
-        if (!string.IsNullOrWhiteSpace(country))
-            query = query.Where(r => r.Country == country);
-        if (!string.IsNullOrWhiteSpace(city))
-            query = query.Where(r => r.City == city);
+        if (!string.IsNullOrEmpty(country))
+            query = query.Where(c => c.RentalLocation != null && c.RentalLocation.Country == country);
+
+        if (!string.IsNullOrEmpty(city))
+            query = query.Where(c => c.RentalLocation != null && c.RentalLocation.City == city);
 
         if (startDate != null && endDate != null)
         {
-            query = query.Where(r => r.Cars.Any(car =>
-                car.IsAvailable && (
-                    car.Bookings == null ||
-                    !car.Bookings.Any(b => !b.IsDeleted && startDate < b.EndDate && endDate > b.StartDate)
-                )
-            ));
+            query = query.Where(c =>
+                c.Bookings == null ||
+                !c.Bookings.Any(b => !b.IsDeleted && startDate < b.EndDate && endDate > b.StartDate)
+            );
         }
 
-        return await query.ToListAsync();
+        var grouped = query
+            .GroupBy(c => c.CarModel!)
+            .Select(g => new CarModelSummaryDto
+            {
+                CarModelId = g.Key.Id,
+                ModelName = g.Key.ModelName,
+                Make = g.Key.Make,
+                AvailableCarsCount = g.Count(),
+                RentalPrices = g.Key.RentalPrices.Select(rp => new RentalPriceDto
+                {
+                    Id = rp.Id,
+                    Price = rp.Price,
+                    PriceType = rp.PriceType
+                }).ToList()
+            })
+            .OrderBy(cm => cm.ModelName);
+
+        var totalCount = await grouped.CountAsync();
+
+        var items = await grouped
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        return (items, totalCount);
     }
 }

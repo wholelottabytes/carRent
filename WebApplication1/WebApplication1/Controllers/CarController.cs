@@ -7,6 +7,7 @@ using WebApplication1.Common.Constants;
 using WebApplication1.Common.DTOs;
 using WebApplication1.Data.Models;
 using WebApplication1.Business.Services;
+using WebApplication1.Common.Exceptions;
 
 namespace WebApplication1.API.Controllers
 {
@@ -15,38 +16,42 @@ namespace WebApplication1.API.Controllers
     [Authorize(Roles = Roles.AdminName)]
     public class CarController : ControllerBase
     {
-        private readonly ICarService _svc;
-        public CarController(ICarService svc) => _svc = svc;
+        private readonly ICarService carService;
+        public CarController(ICarService svc) => carService = svc;
 
         [HttpPost]
         public async Task<ActionResult<Car>> Create([FromBody] CreateCarDto dto)
         {
-            var car = await _svc.CreateAsync(dto);
+            var car = await carService.CreateAsync(dto);
             return CreatedAtAction(nameof(Get), new { id = car.Id }, car);
         }
 
         [HttpGet]
-        public Task<IEnumerable<Car>> List() => _svc.ListAsync();
+        public async Task<ActionResult<IEnumerable<Car>>> List()
+        {
+            var cars = await carService.ListAsync();
+            return Ok(cars);
+        }
 
         [HttpGet("{id:guid}")]
         public async Task<ActionResult<CarWithCarModelDto>> Get(Guid id)
         {
-            var car = await _svc.GetByIdAsync(id);
-            var dto = DtoMapper.ToDtoWithCar(car);
-            return Ok(dto);
+              var car = await carService.GetByIdAsync(id);
+                var dto = DtoMapper.ToDtoWithCar(car);
+                return Ok(dto);
         }
 
         [HttpPut("{id:guid}")]
         public async Task<IActionResult> Update(Guid id, [FromBody] UpdateCarDto dto)
         {
-            await _svc.UpdateAsync(id, dto);
+            await carService.UpdateAsync(id, dto);
             return NoContent();
         }
 
         [HttpDelete("{id:guid}")]
         public async Task<IActionResult> Delete(Guid id)
         {
-            await _svc.DeleteAsync(id);
+            await carService.DeleteAsync(id);
             return NoContent();
         }
     }

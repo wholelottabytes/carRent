@@ -11,14 +11,14 @@ namespace WebApplication1.API.Controllers;
 [Route("api/[controller]/[action]")]
 public class RentalLocationController : ControllerBase
 {
-    private readonly IRentalLocationService _svc;
-    public RentalLocationController(IRentalLocationService svc) => _svc = svc;
+    private readonly IRentalLocationService rentalLocationService;
+    public RentalLocationController(IRentalLocationService svc) => rentalLocationService = svc;
 
     [HttpPost]
     [Authorize(Roles = Roles.AdminName)]
     public async Task<ActionResult<RentalLocation>> Create([FromBody] CreateRentalLocationDto dto)
     {
-        var loc = await _svc.CreateAsync(dto);
+        var loc = await rentalLocationService.CreateAsync(dto);
         return CreatedAtAction(nameof(Get), new { id = loc.Id }, loc);
     }
    
@@ -27,7 +27,7 @@ public class RentalLocationController : ControllerBase
     [Authorize(Roles = $"{Roles.AdminName},{Roles.UserName}")]
     public async Task<ActionResult<RentalLocationDto>> Get(Guid id)
     {
-        var loc = await _svc.GetByIdAsync(id);
+        var loc = await rentalLocationService.GetByIdAsync(id);
 
         var dto = new RentalLocationDto
         {
@@ -41,7 +41,7 @@ public class RentalLocationController : ControllerBase
                 Id = c.Id,
                 ModelName = c.CarModel?.ModelName ?? "Unknown",
                 Make = c.CarModel?.Make ?? "Unknown",    
-                IsAvailable = c.IsAvailable
+                IsEnabled = c.IsEnabled
             }).ToList() ?? new List<CarDtoLocation>()
         };
 
@@ -52,7 +52,7 @@ public class RentalLocationController : ControllerBase
     [Authorize(Roles = Roles.AdminName)]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateRentalLocationDto dto)
     {
-        await _svc.UpdateAsync(id, dto);
+        await rentalLocationService.UpdateAsync(id, dto);
         return NoContent();
     }
 
@@ -60,22 +60,15 @@ public class RentalLocationController : ControllerBase
     [Authorize(Roles = Roles.AdminName)]
     public async Task<IActionResult> Delete(Guid id)
     {
-        await _svc.DeleteAsync(id);
+        await rentalLocationService.DeleteAsync(id);
         return NoContent();
     }
-    [HttpGet("{locationId:guid}")]
-    [Authorize(Roles = $"{Roles.AdminName},{Roles.UserName}")]
-    public async Task<ActionResult<IEnumerable<CarWithCarModelDto>>> AvailableCars(Guid locationId)
-    {
-        var cars = await _svc.GetAvailableCarsAsync(locationId);
-        var dtos = cars.Select(DtoMapper.ToDtoWithCar);
-        return Ok(dtos);
-    }
+    
     [HttpGet]
     [Authorize(Roles = $"{Roles.AdminName},{Roles.UserName}")]
     public async Task<ActionResult<IEnumerable<RentalLocationDto>>> List()
     {
-        var locations = await _svc.ListAsync();
+        var locations = await rentalLocationService.ListAsync();
 
         var dtos = locations.Select(loc => new RentalLocationDto
         {
@@ -84,42 +77,31 @@ public class RentalLocationController : ControllerBase
             City = loc.City,
             Name = loc.Name,
             Address = loc.Address,
-            Cars = loc.Cars?.Where(c => !c.IsDeleted).Select(c => new CarDtoLocation
+            Cars = loc.Cars?.Select(c => new CarDtoLocation
             {
                 Id = c.Id,
                 ModelName = c.CarModel?.ModelName ?? "Unknown",
                 Make = c.CarModel?.Make ?? "Unknown",  
-                IsAvailable = c.IsAvailable
+                IsEnabled = c.IsEnabled
             }).ToList() ?? new List<CarDtoLocation>()
         });
 
         return Ok(dtos);
     }
-    [HttpGet]
+    [HttpGet("SearchWithPagination")]
     [Authorize(Roles = $"{Roles.AdminName},{Roles.UserName}")]
-    public async Task<ActionResult<IEnumerable<RentalLocationDto>>> Search([FromQuery] string? country, [FromQuery] string? city, [FromQuery] DateTime? start, [FromQuery] DateTime? end)
+    public async Task<ActionResult<PagedResult<CarModelSummaryDto>>> SearchWithPagination(
+        [FromQuery] string? country,
+        [FromQuery] string? city,
+        [FromQuery] DateTime? start,
+        [FromQuery] DateTime? end,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10)
     {
         var startUtc = start?.ToUniversalTime();
         var endUtc = end?.ToUniversalTime();
-        var locations = await _svc.SearchAsync(country, city, startUtc, endUtc);
 
-        var dtos = locations.Select(loc => new RentalLocationDto
-        {
-            Id = loc.Id,
-            Country = loc.Country,
-            City = loc.City,
-            Name = loc.Name,
-            Address = loc.Address,
-            Cars = loc.Cars?.Where(c => c.IsAvailable && !c.IsDeleted)
-                .Select(c => new CarDtoLocation
-                {
-                    Id = c.Id,
-                    ModelName = c.CarModel?.ModelName ?? "Unknown",
-                    Make = c.CarModel?.Make ?? "Unknown",  
-                    IsAvailable = c.IsAvailable
-                }).ToList() ?? new List<CarDtoLocation>()
-        });
-
-        return Ok(dtos);
+        var result = await rentalLocationService.SearchCarModelsPagedAsync(country, city, startUtc, endUtc, page, pageSize);
+        return Ok(result);
     }
 }

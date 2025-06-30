@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using WebApplication1.Common.DTOs;
+using WebApplication1.Common.Exceptions;
 using WebApplication1.Data.Models;
 using WebApplication1.Data.Repositories;
 
@@ -9,9 +10,9 @@ namespace WebApplication1.Business.Services
 {
     public class AdditionalServiceService : IAdditionalServiceService
     {
-        private readonly IAdditionalServiceRepository _repo;
+        private readonly IAdditionalServiceRepository additionalServiceRepository;
 
-        public AdditionalServiceService(IAdditionalServiceRepository repo) => _repo = repo;
+        public AdditionalServiceService(IAdditionalServiceRepository repo) => additionalServiceRepository = repo;
 
         public async Task<AdditionalService> CreateAsync(CreateAdditionalServiceDto dto)
         {
@@ -21,29 +22,43 @@ namespace WebApplication1.Business.Services
                 Price             = dto.Price,
                 RentalLocationId  = dto.RentalLocationId
             };
-            await _repo.AddAsync(svc);
+            await additionalServiceRepository.AddAsync(svc);
             return svc;
         }
 
-        public async Task<IEnumerable<AdditionalService>> GetByLocationIdAsync(Guid locationId)
+        public Task<IEnumerable<AdditionalService>> GetByLocationIdAsync(Guid locationId)
         {
-            return await _repo.GetByLocationIdAsync(locationId);
+            return additionalServiceRepository.GetByLocationIdAsync(locationId);
         }
-        public Task<AdditionalService> GetByIdAsync(Guid id) => _repo.GetByIdAsync(id);
+
+        public async Task<AdditionalService> GetByIdAsync(Guid id)
+        {
+            var svc = await additionalServiceRepository.GetByIdAsync(id);
+            if (svc == null)
+                throw new EntityNotFoundException("AdditionalService", id);
+
+            return svc;
+        }
 
         public async Task UpdateAsync(Guid id, UpdateAdditionalServiceDto dto)
         {
-            var svc = await _repo.GetByIdAsync(id);
+            var svc = await additionalServiceRepository.GetByIdAsync(id);
+            if (svc == null)
+                throw new EntityNotFoundException("AdditionalService", id);
+
             svc.Name             = dto.Name;
             svc.Price            = dto.Price;
             svc.RentalLocationId = dto.RentalLocationId;
-            await _repo.UpdateAsync(svc);
+            await additionalServiceRepository.UpdateAsync(svc);
         }
 
         public async Task DeleteAsync(Guid id)
         {
-            var svc = await _repo.GetByIdAsync(id);
-            await _repo.SoftDeleteAsync(svc);
+            var svc = await additionalServiceRepository.GetByIdAsync(id);
+            if (svc == null)
+                throw new EntityNotFoundException("AdditionalService", id);
+
+            await additionalServiceRepository.SoftDeleteAsync(svc);
         }
     }
 }

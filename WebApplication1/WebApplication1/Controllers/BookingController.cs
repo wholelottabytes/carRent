@@ -13,11 +13,11 @@ namespace WebApplication1.API.Controllers;
 [Authorize(Roles = Roles.UserName)]
 public class BookingController : ControllerBase
 {
-    private readonly IBookingService _svc;
+    private readonly IBookingService bookingService;
 
     public BookingController(IBookingService svc)
     {
-        _svc = svc;
+        bookingService = svc;
     }
 
     [HttpPost]
@@ -37,7 +37,7 @@ public class BookingController : ControllerBase
             UserId = userId
         };
 
-        var result = await _svc.CreateBookingAsync(booking, dto.AdditionalServiceIds ?? []);
+        var result = await bookingService.CreateBookingAsync(booking, dto.AdditionalServiceIds ?? []);
         return Ok(result);
     }
 
@@ -47,14 +47,14 @@ public class BookingController : ControllerBase
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)
                      ?? throw new UnauthorizedAccessException("No user ID");
 
-        var bookings = await _svc.GetUserBookingsAsync(userId);
+        var bookings = await bookingService.GetUserBookingsAsync(userId);
         return Ok(bookings);
     }
 
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(Guid id)
     {
-        await _svc.DeleteAsync(id);
+        await bookingService.DeleteAsync(id);
         return NoContent();
     }
 }

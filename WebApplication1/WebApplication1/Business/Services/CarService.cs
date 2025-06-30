@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using WebApplication1.Common.DTOs;
+using WebApplication1.Common.Exceptions;
 using WebApplication1.Data.Models;
 using WebApplication1.Data.Repositories;
 
@@ -9,9 +10,9 @@ namespace WebApplication1.Business.Services
 {
     public class CarService : ICarService
     {
-        private readonly ICarRepository _repo;
+        private readonly ICarRepository carRepository;
 
-        public CarService(ICarRepository repo) => _repo = repo;
+        public CarService(ICarRepository repo) => carRepository = repo;
 
         public async Task<Car> CreateAsync(CreateCarDto dto)
         {
@@ -19,29 +20,34 @@ namespace WebApplication1.Business.Services
             {
                 CarModelId        = dto.CarModelId,
                 RentalLocationId  = dto.RentalLocationId,
-                IsAvailable       = true
+                IsEnabled      = true
             };
-            await _repo.AddAsync(car);
+            await carRepository.AddAsync(car);
             return car;
         }
 
-        public Task<IEnumerable<Car>> ListAsync() => _repo.ListAsync();
+        public Task<IEnumerable<Car>> ListAsync() => carRepository.ListAsync();
+        
+        public async Task<Car> GetByIdAsync(Guid id)
+        {
+            var car = await carRepository.GetByIdAsync(id);
+            if (car == null)
+                throw new EntityNotFoundException("Car", id);
 
-        public Task<Car> GetByIdAsync(Guid id) => _repo.GetByIdAsync(id);
+            return car;
+        }
 
         public async Task UpdateAsync(Guid id, UpdateCarDto dto)
         {
-            var car = await _repo.GetByIdAsync(id);
-            if (dto.CarModelId != default)       car.CarModelId       = dto.CarModelId;
-            if (dto.RentalLocationId != default) car.RentalLocationId = dto.RentalLocationId;
-            if (dto.IsAvailable.HasValue)        car.IsAvailable      = dto.IsAvailable.Value;
-            await _repo.UpdateAsync(car);
+            var car = await carRepository.GetByIdAsync(id);
+            car.IsEnabled = dto.IsEnabled ?? car.IsEnabled;
+            await carRepository.UpdateAsync(car);
         }
 
         public async Task DeleteAsync(Guid id)
         {
-            var car = await _repo.GetByIdAsync(id);
-            await _repo.SoftDeleteAsync(car);
+            var car = await carRepository.GetByIdAsync(id);
+            await carRepository.SoftDeleteAsync(car);
         }
     }
 }

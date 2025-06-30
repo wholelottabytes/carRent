@@ -1,8 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using WebApplication1.Data.Context;
 using WebApplication1.Data.Models;
-
-namespace WebApplication1.Data.Repositories;
+using WebApplication1.Data.Repositories;
 
 public class BookingRepository : IBookingRepository
 {
@@ -21,6 +20,7 @@ public class BookingRepository : IBookingRepository
             .Include(b => b.BookingServices!)
             .ThenInclude(bs => bs.AdditionalService)
             .Include(b => b.Car)
+            .ThenInclude(c => c.CarModel)
             .ThenInclude(c => c.RentalPrices)
             .FirstOrDefaultAsync(b => b.Id == id && !b.IsDeleted);
     }

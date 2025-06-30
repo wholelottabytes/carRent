@@ -23,23 +23,48 @@ namespace WebApplication1.API.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Get()
+        public async Task<ActionResult<ProfileDto>> Get()
         {
             var user = await _userManager.GetUserAsync(User);
-            if (user is null) return NotFound();
-            return Ok(new ProfileDto { Id = user.Id, Email = user.Email!, FirstName = user.FirstName, LastName = user.LastName, LicenseNumber = user.LicenseNumber });
+            if (user is null) return NotFound("User not found");
+
+            var response = new ProfileDto
+            {
+                Id = user.Id,
+                Email = user.Email!,
+                FirstName = user.FirstName,
+                LastName = user.LastName,
+                LicenseNumber = user.LicenseNumber
+            };
+
+            return Ok(response);
         }
 
         [HttpPut]
         public async Task<IActionResult> Update([FromBody] UpdateProfileDto dto)
         {
             var user = await _userManager.GetUserAsync(User);
-            if (user is null) return NotFound();
+            if (user is null) return NotFound("User not found");
+
             user.FirstName = dto.FirstName;
             user.LastName = dto.LastName;
             user.LicenseNumber = dto.LicenseNumber;
-            var res = await _userManager.UpdateAsync(user);
-            return res.Succeeded ? Ok() : BadRequest(res.Errors);
+
+            var result = await _userManager.UpdateAsync(user);
+
+            if (!result.Succeeded)
+                return BadRequest(result.Errors);
+
+            var response = new ProfileDto
+            {
+                Id = user.Id,
+                Email = user.Email!,
+                FirstName = user.FirstName,
+                LastName = user.LastName,
+                LicenseNumber = user.LicenseNumber
+            };
+
+            return Ok(response);
         }
 
         [HttpDelete]
@@ -47,7 +72,7 @@ namespace WebApplication1.API.Controllers
         {
             var id = _userManager.GetUserId(User);
             await _userService.SoftDeleteAsync(id);
-            return Ok();
+            return Ok(new { Message = "Profile deleted" });
         }
     }
 }

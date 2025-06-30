@@ -17,17 +17,20 @@ namespace WebApplication1.Data.Repositories
             _ctx.AdditionalServices.Add(service);
             await _ctx.SaveChangesAsync();
         }
+
         public async Task<IEnumerable<AdditionalService>> GetByLocationIdAsync(Guid locationId)
         {
             return await _ctx.AdditionalServices
                 .Where(s => s.RentalLocationId == locationId && !s.IsDeleted)
                 .ToListAsync();
         }
-        public async Task<AdditionalService> GetByIdAsync(Guid id) =>
-            await _ctx.AdditionalServices
-                .FirstOrDefaultAsync(s => s.Id == id && !s.IsDeleted)
-            ?? throw new KeyNotFoundException();
-        
+
+        public async Task<AdditionalService?> GetByIdAsync(Guid id)
+        {
+            return await _ctx.AdditionalServices
+                .FirstOrDefaultAsync(s => s.Id == id && !s.IsDeleted);
+        }
+
         public async Task UpdateAsync(AdditionalService service)
         {
             _ctx.AdditionalServices.Update(service);

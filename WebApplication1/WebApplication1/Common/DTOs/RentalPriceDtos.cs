@@ -8,11 +8,11 @@ namespace WebApplication1.Common.DTOs
         public Guid Id { get; set; }
         public PriceType PriceType { get; set; }
         public decimal Price { get; set; }
-        public Guid CarId { get; set; }
+        public Guid CarModelId { get; set; }
     }
     public class CreateRentalPriceDto
     {
-        [Required] public Guid CarId    { get; set; }
+        [Required] public Guid CarModelId    { get; set; }
         [Required] public PriceType PriceType { get; set; }
         [Required] public decimal Price     { get; set; }
     }

@@ -1,3 +1,4 @@
+using WebApplication1.Common.DTOs;
 using WebApplication1.Data.Models;
 
 namespace WebApplication1.Data.Repositories;
@@ -9,7 +10,7 @@ public interface IRentalLocationRepository
     Task AddAsync(RentalLocation loc);
     Task UpdateAsync(RentalLocation loc);
     Task SoftDeleteAsync(RentalLocation loc);
-    Task<IEnumerable<Car>> GetAvailableCarsAsync(Guid locationId);
-    Task<IEnumerable<RentalLocation>> SearchAsync(string? country, string? city, DateTime? startDate, DateTime? endDate);
+    Task<(IEnumerable<CarModelSummaryDto> Items, int TotalCount)> SearchCarModelsAsync(
+        string? country, string? city, DateTime? startDate, DateTime? endDate, int page, int pageSize);
 
 }

@@ -10,6 +10,8 @@ namespace WebApplication1.Data.Models
         [Required]
         public string Url { get; set; } = null!;
 
-        public Guid  CarId { get; set; }
+        [Required]
+        public Guid CarModelId { get; set; }
+        public CarModel? CarModel { get; set; }
     }
 }

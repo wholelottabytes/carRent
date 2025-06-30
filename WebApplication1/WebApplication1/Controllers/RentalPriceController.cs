@@ -1,40 +1,43 @@
-using System;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using WebApplication1.Business.Services;
 using WebApplication1.Common.Constants;
 using WebApplication1.Common.DTOs;
-using WebApplication1.Business.Services;
 
-namespace WebApplication1.API.Controllers
+[ApiController]
+[Route("api/[controller]/[action]")]
+[Authorize(Roles = Roles.AdminName)]
+public class RentalPriceController : ControllerBase
 {
-    [ApiController]
-    [Route("api/[controller]/[action]")]
-    [Authorize(Roles = Roles.AdminName)]
-    public class RentalPriceController : ControllerBase
+    private readonly IRentalPriceService rentalPriceService;
+    public RentalPriceController(IRentalPriceService svc) => rentalPriceService = svc;
+
+    [HttpPost]
+    public async Task<ActionResult<RentalPriceDto>> Create([FromBody] CreateRentalPriceDto dto)
     {
-        private readonly IRentalPriceService _svc;
-        public RentalPriceController(IRentalPriceService svc) => _svc = svc;
+        var created = await rentalPriceService.CreateAsync(dto);
+        var result = await rentalPriceService.GetByIdAsync(created.Id);
+        return CreatedAtAction(nameof(Get), new { id = result.Id }, result);
+    }
 
-        [HttpPost]
-        public async Task<IActionResult> Create([FromBody] CreateRentalPriceDto dto)
-        {
-            await _svc.CreateAsync(dto);
-            return NoContent();
-        }
+    [HttpGet("{id:guid}")]
+    public async Task<ActionResult<RentalPriceDto>> Get(Guid id)
+    {
+        var price = await rentalPriceService.GetByIdAsync(id);
+        return Ok(price);
+    }
 
-        [HttpPut("{id:guid}")]
-        public async Task<IActionResult> Update(Guid id, [FromBody] UpdateRentalPriceDto dto)
-        {
-            await _svc.UpdateAsync(id, dto);
-            return NoContent();
-        }
+    [HttpPut("{id:guid}")]
+    public async Task<IActionResult> Update(Guid id, [FromBody] UpdateRentalPriceDto dto)
+    {
+        await rentalPriceService.UpdateAsync(id, dto);
+        return NoContent();
+    }
 
-        [HttpDelete("{id:guid}")]
-        public async Task<IActionResult> Delete(Guid id)
-        {
-            await _svc.DeleteAsync(id);
-            return NoContent();
-        }
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> Delete(Guid id)
+    {
+        await rentalPriceService.DeleteAsync(id);
+        return NoContent();
     }
 }

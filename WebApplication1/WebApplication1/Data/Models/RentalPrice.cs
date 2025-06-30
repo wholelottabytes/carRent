@@ -43,15 +43,17 @@ namespace WebApplication1.Data.Models
         public Guid Id { get; set; } = Guid.NewGuid();
 
         [Required]
-        public Guid CarId { get; set; }
+        public Guid CarModelId { get; set; }
+        public CarModel? CarModel { get; set; }
 
         [Required]
-        public PriceType PriceType { get; set; } 
-        
+        public PriceType PriceType { get; set; }
+
         [NotMapped]
         public RentalInterval Interval => RentalInterval.FromPriceType(PriceType);
 
         [Required]
         public decimal Price { get; set; }
     }
+
 }

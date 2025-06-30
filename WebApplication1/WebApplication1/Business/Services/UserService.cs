@@ -10,13 +10,13 @@ using WebApplication1.Data.Repositories;
 
 public class UserService : IUserService
 {
-    private readonly IUserRepository userRepository;
+    private readonly IUserRepository _userRepository;
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly IConfiguration _config;
 
     public UserService(IUserRepository userRepo, UserManager<ApplicationUser> userManager, IConfiguration config)
     {
-        userRepository = userRepo;
+        _userRepository = userRepo;
         _userManager = userManager;
         _config = config;
     }
@@ -55,9 +55,9 @@ public class UserService : IUserService
 
     public async Task SoftDeleteAsync(string id)
     {
-        var user = await userRepository.GetByIdAsync(id)
+        var user = await _userRepository.GetByIdAsync(id)
                    ?? throw new EntityNotFoundException("User", id);
 
-        await userRepository.DeleteSoftAsync(user);
+        await _userRepository.DeleteSoftAsync(user);
     }
 }

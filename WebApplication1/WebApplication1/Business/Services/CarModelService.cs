@@ -6,11 +6,11 @@ using WebApplication1.Data.Repositories;
 
 public class CarModelService : ICarModelService
 {
-    private readonly ICarModelRepository carModelRepository;
+    private readonly ICarModelRepository _carModelRepository;
 
     public CarModelService(ICarModelRepository repo)
     {
-        carModelRepository = repo;
+        _carModelRepository = repo;
     }
 
     public async Task<CarModel> CreateAsync(CreateCarModelDto dto)
@@ -24,13 +24,13 @@ public class CarModelService : ICarModelService
             SeatingCapacity          = dto.SeatingCapacity,
             FuelConsumptionPer100Km  = dto.FuelConsumptionPer100Km
         };
-        await carModelRepository.AddAsync(model);
+        await _carModelRepository.AddAsync(model);
         return model;
     }
 
     public async Task<CarModelDto> GetByIdAsync(Guid id)
     {
-        var model = await carModelRepository.GetByIdAsync(id)
+        var model = await _carModelRepository.GetByIdAsync(id)
                     ?? throw new EntityNotFoundException("CarModel", id);
 
         return DtoMapper.ToDto(model);
@@ -38,13 +38,13 @@ public class CarModelService : ICarModelService
 
     public async Task<IEnumerable<CarModelDto>> ListAsync()
     {
-        var list = await carModelRepository.ListAsync();
+        var list = await _carModelRepository.ListAsync();
         return list.Select(DtoMapper.ToDto);
     }
 
     public async Task UpdateAsync(Guid id, UpdateCarModelDto dto)
     {
-        var model = await carModelRepository.GetByIdAsync(id)
+        var model = await _carModelRepository.GetByIdAsync(id)
                     ?? throw new EntityNotFoundException("CarModel", id);
 
         model.Make                    = dto.Make;
@@ -54,14 +54,14 @@ public class CarModelService : ICarModelService
         model.SeatingCapacity        = dto.SeatingCapacity;
         model.FuelConsumptionPer100Km = dto.FuelConsumptionPer100Km;
 
-        await carModelRepository.UpdateAsync(model);
+        await _carModelRepository.UpdateAsync(model);
     }
 
     public async Task DeleteAsync(Guid id)
     {
-        var model = await carModelRepository.GetByIdAsync(id)
+        var model = await _carModelRepository.GetByIdAsync(id)
                     ?? throw new EntityNotFoundException("CarModel", id);
 
-        await carModelRepository.SoftDeleteAsync(model);
+        await _carModelRepository.SoftDeleteAsync(model);
     }
 }

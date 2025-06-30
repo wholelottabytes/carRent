@@ -5,18 +5,18 @@ using WebApplication1.Data.Repositories;
 
 public class BookingService : IBookingService
 {
-    private readonly IBookingRepository bookingRepository;
-    private readonly ICarRepository carRepository;
+    private readonly IBookingRepository _bookingRepository;
+    private readonly ICarRepository _carRepository;
 
     public BookingService(IBookingRepository repo, ICarRepository carRepo)
     {
-        bookingRepository = repo;
-        carRepository = carRepo;
+        _bookingRepository = repo;
+        _carRepository = carRepo;
     }
 
     public async Task<Booking> CreateBookingAsync(Booking booking, IEnumerable<Guid> additionalServiceIds)
     {
-        var car = await carRepository.GetByIdAsync(booking.CarId)
+        var car = await _carRepository.GetByIdAsync(booking.CarId)
             ?? throw new EntityNotFoundException(nameof(Car), booking.CarId);
 
         if (car.Bookings != null && car.Bookings.Any(b =>
@@ -54,21 +54,21 @@ public class BookingService : IBookingService
             AdditionalServiceId = s.Id
         }).ToList();
 
-        await bookingRepository.AddAsync(booking);
+        await _bookingRepository.AddAsync(booking);
         return booking;
     }
 
     public async Task<IEnumerable<Booking>> GetUserBookingsAsync(string userId)
     {
-        return await bookingRepository.GetUserBookingsAsync(userId);
+        return await _bookingRepository.GetUserBookingsAsync(userId);
     }
 
     public async Task DeleteAsync(Guid id)
     {
-        var booking = await bookingRepository.GetByIdAsync(id)
+        var booking = await _bookingRepository.GetByIdAsync(id)
             ?? throw new EntityNotFoundException(nameof(Booking), id);
 
-        await bookingRepository.SoftDeleteAsync(booking);
+        await _bookingRepository.SoftDeleteAsync(booking);
     }
 
     private decimal CalculatePrice(IEnumerable<RentalPrice> prices, double totalHours)

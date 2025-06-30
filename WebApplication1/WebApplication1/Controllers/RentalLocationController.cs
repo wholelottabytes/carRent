@@ -11,14 +11,14 @@ namespace WebApplication1.API.Controllers;
 [Route("api/[controller]/[action]")]
 public class RentalLocationController : ControllerBase
 {
-    private readonly IRentalLocationService rentalLocationService;
-    public RentalLocationController(IRentalLocationService svc) => rentalLocationService = svc;
+    private readonly IRentalLocationService _rentalLocationService;
+    public RentalLocationController(IRentalLocationService svc) => _rentalLocationService = svc;
 
     [HttpPost]
     [Authorize(Roles = Roles.AdminName)]
     public async Task<ActionResult<RentalLocation>> Create([FromBody] CreateRentalLocationDto dto)
     {
-        var loc = await rentalLocationService.CreateAsync(dto);
+        var loc = await _rentalLocationService.CreateAsync(dto);
         return CreatedAtAction(nameof(Get), new { id = loc.Id }, loc);
     }
    
@@ -27,7 +27,7 @@ public class RentalLocationController : ControllerBase
     [Authorize(Roles = $"{Roles.AdminName},{Roles.UserName}")]
     public async Task<ActionResult<RentalLocationDto>> Get(Guid id)
     {
-        var loc = await rentalLocationService.GetByIdAsync(id);
+        var loc = await _rentalLocationService.GetByIdAsync(id);
 
         var dto = new RentalLocationDto
         {
@@ -52,7 +52,7 @@ public class RentalLocationController : ControllerBase
     [Authorize(Roles = Roles.AdminName)]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateRentalLocationDto dto)
     {
-        await rentalLocationService.UpdateAsync(id, dto);
+        await _rentalLocationService.UpdateAsync(id, dto);
         return NoContent();
     }
 
@@ -60,7 +60,7 @@ public class RentalLocationController : ControllerBase
     [Authorize(Roles = Roles.AdminName)]
     public async Task<IActionResult> Delete(Guid id)
     {
-        await rentalLocationService.DeleteAsync(id);
+        await _rentalLocationService.DeleteAsync(id);
         return NoContent();
     }
     
@@ -68,7 +68,7 @@ public class RentalLocationController : ControllerBase
     [Authorize(Roles = $"{Roles.AdminName},{Roles.UserName}")]
     public async Task<ActionResult<IEnumerable<RentalLocationDto>>> List()
     {
-        var locations = await rentalLocationService.ListAsync();
+        var locations = await _rentalLocationService.ListAsync();
 
         var dtos = locations.Select(loc => new RentalLocationDto
         {
@@ -101,7 +101,7 @@ public class RentalLocationController : ControllerBase
         var startUtc = start?.ToUniversalTime();
         var endUtc = end?.ToUniversalTime();
 
-        var result = await rentalLocationService.SearchCarModelsPagedAsync(country, city, startUtc, endUtc, page, pageSize);
+        var result = await _rentalLocationService.SearchCarModelsPagedAsync(country, city, startUtc, endUtc, page, pageSize);
         return Ok(result);
     }
 }

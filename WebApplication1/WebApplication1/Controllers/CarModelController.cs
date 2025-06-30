@@ -15,37 +15,37 @@ namespace WebApplication1.API.Controllers
     [Authorize(Roles = Roles.AdminName)]
     public class CarModelController : ControllerBase
     {
-        private readonly ICarModelService carModelService;
-        public CarModelController(ICarModelService svc) => carModelService = svc;
+        private readonly ICarModelService _carModelService;
+        public CarModelController(ICarModelService svc) => _carModelService = svc;
 
         [HttpPost]
         public async Task<ActionResult<CarModel>> Create([FromBody] CreateCarModelDto dto)
         {
-            var model = await carModelService.CreateAsync(dto);
+            var model = await _carModelService.CreateAsync(dto);
             return CreatedAtAction(nameof(Get), new { id = model.Id }, model);
         }
 
         [HttpGet("{id:guid}")]
         public async Task<ActionResult<CarModelDto>> Get(Guid id)
         {
-            var model = await carModelService.GetByIdAsync(id);
+            var model = await _carModelService.GetByIdAsync(id);
             return Ok(model);
         }
         
         [HttpGet]
-        public Task<IEnumerable<CarModelDto>> List() => carModelService.ListAsync();
+        public Task<IEnumerable<CarModelDto>> List() => _carModelService.ListAsync();
 
         [HttpPut("{id:guid}")]
         public async Task<IActionResult> Update(Guid id, [FromBody] UpdateCarModelDto dto)
         {
-            await carModelService.UpdateAsync(id, dto);
+            await _carModelService.UpdateAsync(id, dto);
             return NoContent();
         }
 
         [HttpDelete("{id:guid}")]
         public async Task<IActionResult> Delete(Guid id)
         {
-            await carModelService.DeleteAsync(id);
+            await _carModelService.DeleteAsync(id);
             return NoContent();
         }
     }

@@ -15,32 +15,32 @@ namespace WebApplication1.API.Controllers
     [Authorize(Roles = Roles.AdminName)]
     public class AdditionalServiceController : ControllerBase
     {
-        private readonly IAdditionalServiceService additionalServiceService;
-        public AdditionalServiceController(IAdditionalServiceService svc) => additionalServiceService = svc;
+        private readonly IAdditionalServiceService _additionalServiceService;
+        public AdditionalServiceController(IAdditionalServiceService svc) => _additionalServiceService = svc;
 
         [HttpPost]
         public async Task<ActionResult<AdditionalService>> Create([FromBody] CreateAdditionalServiceDto dto)
         {
-            var svcItem = await additionalServiceService.CreateAsync(dto);
+            var svcItem = await _additionalServiceService.CreateAsync(dto);
             return NoContent();
         }
 
         [HttpGet("{locationId:guid}")]
         public async Task<IEnumerable<AdditionalService>> GetByLocation(Guid locationId)
         {
-            return await additionalServiceService.GetByLocationIdAsync(locationId);
+            return await _additionalServiceService.GetByLocationIdAsync(locationId);
         }
         [HttpPut("{id:guid}")]
         public async Task<IActionResult> Update(Guid id, [FromBody] UpdateAdditionalServiceDto dto)
         {
-            await additionalServiceService.UpdateAsync(id, dto);
+            await _additionalServiceService.UpdateAsync(id, dto);
             return NoContent();
         }
 
         [HttpDelete("{id:guid}")]
         public async Task<IActionResult> Delete(Guid id)
         {
-            await additionalServiceService.DeleteAsync(id);
+            await _additionalServiceService.DeleteAsync(id);
             return NoContent();
         }
     }

@@ -6,9 +6,9 @@ using WebApplication1.Data.Repositories;
 
 public class RentalLocationService : IRentalLocationService
 {
-    private readonly IRentalLocationRepository rentalLocationRepository;
+    private readonly IRentalLocationRepository _rentalLocationRepository;
 
-    public RentalLocationService(IRentalLocationRepository repo) => rentalLocationRepository = repo;
+    public RentalLocationService(IRentalLocationRepository repo) => _rentalLocationRepository = repo;
 
     public async Task<RentalLocation> CreateAsync(CreateRentalLocationDto dto)
     {
@@ -20,21 +20,21 @@ public class RentalLocationService : IRentalLocationService
             Address = dto.Address
         };
 
-        await rentalLocationRepository.AddAsync(loc);
+        await _rentalLocationRepository.AddAsync(loc);
         return loc;
     }
 
     public async Task<IEnumerable<RentalLocation>> ListAsync()
-        => await rentalLocationRepository.ListAsync();
+        => await _rentalLocationRepository.ListAsync();
 
     public async Task<RentalLocation> GetByIdAsync(Guid id)
-        => await rentalLocationRepository.GetByIdAsync(id)
+        => await _rentalLocationRepository.GetByIdAsync(id)
            ?? throw new EntityNotFoundException("RentalLocation", id);
 
   
     public async Task UpdateAsync(Guid id, UpdateRentalLocationDto dto)
     {
-        var loc = await rentalLocationRepository.GetByIdAsync(id)
+        var loc = await _rentalLocationRepository.GetByIdAsync(id)
                   ?? throw new EntityNotFoundException("RentalLocation", id);
 
         loc.Country = dto.Country;
@@ -42,20 +42,20 @@ public class RentalLocationService : IRentalLocationService
         loc.Name = dto.Name;
         loc.Address = dto.Address;
 
-        await rentalLocationRepository.UpdateAsync(loc);
+        await _rentalLocationRepository.UpdateAsync(loc);
     }
 
     public async Task DeleteAsync(Guid id)
     {
-        var loc = await rentalLocationRepository.GetByIdAsync(id)
+        var loc = await _rentalLocationRepository.GetByIdAsync(id)
                   ?? throw new EntityNotFoundException("RentalLocation", id);
 
-        await rentalLocationRepository.SoftDeleteAsync(loc);
+        await _rentalLocationRepository.SoftDeleteAsync(loc);
     }
 
     public async Task<PagedResult<CarModelSummaryDto>> SearchCarModelsPagedAsync(string? country, string? city, DateTime? startDate, DateTime? endDate, int page, int pageSize)
     {
-        var (items, totalCount) = await rentalLocationRepository.SearchCarModelsAsync(country, city, startDate, endDate, page, pageSize);
+        var (items, totalCount) = await _rentalLocationRepository.SearchCarModelsAsync(country, city, startDate, endDate, page, pageSize);
         return new PagedResult<CarModelSummaryDto>
         {
             Items = items,

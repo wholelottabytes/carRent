@@ -5,12 +5,12 @@ using WebApplication1.Data.Repositories;
 
 public class CarImageService : ICarImageService
 {
-    private readonly ICarImageRepository carImageRepository;
+    private readonly ICarImageRepository _carImageRepository;
     private readonly IWebHostEnvironment _environment;
 
     public CarImageService(ICarImageRepository repo, IWebHostEnvironment environment)
     {
-        carImageRepository = repo;
+        _carImageRepository = repo;
         _environment = environment;
     }
 
@@ -49,13 +49,13 @@ public class CarImageService : ICarImageService
             CarModelId = CarModelId
         };
 
-        await carImageRepository.AddAsync(image);
+        await _carImageRepository.AddAsync(image);
         return imageUrl;
     }
 
     public async Task DeleteImageAsync(Guid imageId)
     {
-        var image = await carImageRepository.GetByIdAsync(imageId);
+        var image = await _carImageRepository.GetByIdAsync(imageId);
         if (image == null)
             throw new EntityNotFoundException("CarImage", imageId);
 
@@ -66,11 +66,11 @@ public class CarImageService : ICarImageService
         if (File.Exists(filePath))
             File.Delete(filePath);
 
-        await carImageRepository.DeleteAsync(image);
+        await _carImageRepository.DeleteAsync(image);
     }
 
     public Task<IEnumerable<CarImage>> GetImagesByCarIdAsync(Guid carId)
     {
-        return carImageRepository.GetByCarIdAsync(carId);
+        return _carImageRepository.GetByCarIdAsync(carId);
     }
 }

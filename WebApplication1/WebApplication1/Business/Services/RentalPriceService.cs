@@ -6,9 +6,9 @@ using WebApplication1.Data.Repositories;
 
 public class RentalPriceService : IRentalPriceService
 {
-    private readonly IRentalPriceRepository rentalPriceRepository;
+    private readonly IRentalPriceRepository _rentalPriceRepository;
 
-    public RentalPriceService(IRentalPriceRepository repo) => rentalPriceRepository = repo;
+    public RentalPriceService(IRentalPriceRepository repo) => _rentalPriceRepository = repo;
 
     public async Task<RentalPrice> CreateAsync(CreateRentalPriceDto dto)
     {
@@ -18,13 +18,13 @@ public class RentalPriceService : IRentalPriceService
             PriceType = dto.PriceType,
             Price     = dto.Price
         };
-        await rentalPriceRepository.AddAsync(price);
+        await _rentalPriceRepository.AddAsync(price);
         return price;
     }
 
     public async Task<RentalPriceDto> GetByIdAsync(Guid id)
     {
-        var price = await rentalPriceRepository.GetByIdAsync(id)
+        var price = await _rentalPriceRepository.GetByIdAsync(id)
                     ?? throw new EntityNotFoundException("RentalPrice", id);
 
         return new RentalPriceDto
@@ -38,20 +38,20 @@ public class RentalPriceService : IRentalPriceService
 
     public async Task UpdateAsync(Guid id, UpdateRentalPriceDto dto)
     {
-        var price = await rentalPriceRepository.GetByIdAsync(id)
+        var price = await _rentalPriceRepository.GetByIdAsync(id)
                     ?? throw new EntityNotFoundException("RentalPrice", id);
 
         price.PriceType = dto.PriceType;
         price.Price     = dto.Price;
 
-        await rentalPriceRepository.UpdateAsync(price);
+        await _rentalPriceRepository.UpdateAsync(price);
     }
 
     public async Task DeleteAsync(Guid id)
     {
-        var price = await rentalPriceRepository.GetByIdAsync(id)
+        var price = await _rentalPriceRepository.GetByIdAsync(id)
                     ?? throw new EntityNotFoundException("RentalPrice", id);
 
-        await rentalPriceRepository.DeleteAsync(price);
+        await _rentalPriceRepository.DeleteAsync(price);
     }
 }

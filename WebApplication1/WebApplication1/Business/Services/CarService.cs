@@ -31,8 +31,8 @@ namespace WebApplication1.Business.Services
         public async Task<Car> GetByIdAsync(Guid id)
         {
             var car = await _carRepository.GetByIdAsync(id);
-            if (car == null)
-                throw new EntityNotFoundException("Car", id);
+            if (car is null)
+                throw new EntityNotFoundException(nameof(Car), id);
 
             return car;
         }

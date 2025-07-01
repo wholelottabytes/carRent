@@ -49,4 +49,11 @@ namespace WebApplication1.Common.DTOs
         public int AvailableCarsCount { get; set; }
         public List<RentalPriceDto> RentalPrices { get; set; } = new();
     }
+    public class CarModelSearchParams : PaginationParams
+    {
+        public string? Country { get; set; }
+        public string? City { get; set; }
+        public DateTime? StartDate { get; set; }
+        public DateTime? EndDate { get; set; }
+    }
 }

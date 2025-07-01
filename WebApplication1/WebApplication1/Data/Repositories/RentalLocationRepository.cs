@@ -1,24 +1,25 @@
 using Microsoft.EntityFrameworkCore;
 using WebApplication1.Common.DTOs;
+using WebApplication1.Common.Extensions;
 using WebApplication1.Data.Context;
 using WebApplication1.Data.Models;
 using WebApplication1.Data.Repositories;
 
 public class RentalLocationRepository : IRentalLocationRepository
 {
-    private readonly ApplicationDbContext _ctx;
+    private readonly ApplicationDbContext _context;
 
-    public RentalLocationRepository(ApplicationDbContext ctx) => _ctx = ctx;
+    public RentalLocationRepository(ApplicationDbContext ctx) => _context = ctx;
 
     public async Task AddAsync(RentalLocation loc)
     {
-        _ctx.RentalLocations.Add(loc);
-        await _ctx.SaveChangesAsync();
+        _context.RentalLocations.Add(loc);
+        await _context.SaveChangesAsync();
     }
 
     public async Task<RentalLocation?> GetByIdAsync(Guid id)
     {
-        return await _ctx.RentalLocations
+        return await _context.RentalLocations
             .Include(r => r.Cars.Where(c => !c.IsDeleted))
             .ThenInclude(c => c.CarModel)
             .FirstOrDefaultAsync(r => r.Id == id && !r.IsDeleted);
@@ -28,7 +29,7 @@ public class RentalLocationRepository : IRentalLocationRepository
 
     public async Task<IEnumerable<RentalLocation>> ListAsync()
     {
-        return await _ctx.RentalLocations
+        return await _context.RentalLocations
             .Include(r => r.Cars.Where(c => !c.IsDeleted))
             .ThenInclude(c => c.CarModel)
             .Where(r => !r.IsDeleted)
@@ -37,8 +38,8 @@ public class RentalLocationRepository : IRentalLocationRepository
 
     public async Task UpdateAsync(RentalLocation loc)
     {
-        _ctx.RentalLocations.Update(loc);
-        await _ctx.SaveChangesAsync();
+        _context.RentalLocations.Update(loc);
+        await _context.SaveChangesAsync();
     }
 
     public async Task SoftDeleteAsync(RentalLocation loc)
@@ -47,28 +48,24 @@ public class RentalLocationRepository : IRentalLocationRepository
         await UpdateAsync(loc);
     }
 
-    public async Task<(IEnumerable<CarModelSummaryDto> Items, int TotalCount)> SearchCarModelsAsync(
-        string? country, string? city, DateTime? startDate, DateTime? endDate, int page, int pageSize)
+    public async Task<(IEnumerable<CarModelSummaryDto> Items, int TotalCount)> SearchCarModelsAsync(CarModelSearchParams searchParams)
     {
-        var query = _ctx.Cars
+        var query = _context.Cars
             .Include(c => c.CarModel)
             .ThenInclude(cm => cm.RentalPrices)
             .Include(c => c.RentalLocation)
             .Include(c => c.Bookings)
             .Where(c => !c.IsDeleted && c.IsEnabled);
 
-        if (!string.IsNullOrEmpty(country))
-            query = query.Where(c => c.RentalLocation != null && c.RentalLocation.Country == country);
+        query = query
+            .WhereIfNotNullOrEmpty(searchParams.Country, c => c.RentalLocation != null && c.RentalLocation.Country == searchParams.Country)
+            .WhereIfNotNullOrEmpty(searchParams.City, c => c.RentalLocation != null && c.RentalLocation.City == searchParams.City);
 
-        if (!string.IsNullOrEmpty(city))
-            query = query.Where(c => c.RentalLocation != null && c.RentalLocation.City == city);
-
-        if (startDate != null && endDate != null)
+        if (searchParams.StartDate != null && searchParams.EndDate != null)
         {
             query = query.Where(c =>
                 c.Bookings == null ||
-                !c.Bookings.Any(b => !b.IsDeleted && startDate < b.EndDate && endDate > b.StartDate)
-            );
+                !c.Bookings.Any(b => !b.IsDeleted && searchParams.StartDate < b.EndDate && searchParams.EndDate > b.StartDate));
         }
 
         var grouped = query
@@ -91,10 +88,11 @@ public class RentalLocationRepository : IRentalLocationRepository
         var totalCount = await grouped.CountAsync();
 
         var items = await grouped
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
+            .Skip((searchParams.Page - 1) * searchParams.PageSize)
+            .Take(searchParams.PageSize)
             .ToListAsync();
 
         return (items, totalCount);
     }
+
 }

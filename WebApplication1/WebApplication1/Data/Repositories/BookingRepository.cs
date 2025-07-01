@@ -5,18 +5,18 @@ using WebApplication1.Data.Repositories;
 
 public class BookingRepository : IBookingRepository
 {
-    private readonly ApplicationDbContext _ctx;
-    public BookingRepository(ApplicationDbContext ctx) => _ctx = ctx;
+    private readonly ApplicationDbContext _context;
+    public BookingRepository(ApplicationDbContext ctx) => _context = ctx;
 
     public async Task AddAsync(Booking booking)
     {
-        _ctx.Bookings.Add(booking);
-        await _ctx.SaveChangesAsync();
+        _context.Bookings.Add(booking);
+        await _context.SaveChangesAsync();
     }
 
     public async Task<Booking?> GetByIdAsync(Guid id)
     {
-        return await _ctx.Bookings
+        return await _context.Bookings
             .Include(b => b.BookingServices!)
             .ThenInclude(bs => bs.AdditionalService)
             .Include(b => b.Car)
@@ -27,7 +27,7 @@ public class BookingRepository : IBookingRepository
 
     public async Task<IEnumerable<Booking>> GetUserBookingsAsync(string userId)
     {
-        return await _ctx.Bookings
+        return await _context.Bookings
             .Include(b => b.RentalLocation)
             .Include(b => b.Car)
             .Where(b => b.UserId == userId && !b.IsDeleted)
@@ -37,6 +37,6 @@ public class BookingRepository : IBookingRepository
     public async Task SoftDeleteAsync(Booking booking)
     {
         booking.IsDeleted = true;
-        await _ctx.SaveChangesAsync();
+        await _context.SaveChangesAsync();
     }
 }

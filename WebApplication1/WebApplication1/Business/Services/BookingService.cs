@@ -19,7 +19,7 @@ public class BookingService : IBookingService
         var car = await _carRepository.GetByIdAsync(booking.CarId)
             ?? throw new EntityNotFoundException(nameof(Car), booking.CarId);
 
-        if (car.Bookings != null && car.Bookings.Any(b =>
+        if (car.Bookings is not null && car.Bookings.Any(b =>
             !b.IsDeleted &&
             booking.StartDate < b.EndDate &&
             booking.EndDate > b.StartDate))
@@ -31,7 +31,7 @@ public class BookingService : IBookingService
             ?? throw new DomainValidationException("CarModel not loaded");
 
         var prices = carModel.RentalPrices;
-        if (prices == null || !prices.Any())
+        if (prices is null || !prices.Any())
             throw new DomainValidationException("No prices found for this car model");
 
         var durationHours = (booking.EndDate - booking.StartDate).TotalHours;
@@ -71,7 +71,7 @@ public class BookingService : IBookingService
         await _bookingRepository.SoftDeleteAsync(booking);
     }
 
-    private decimal CalculatePrice(IEnumerable<RentalPrice> prices, double totalHours)
+    private static decimal CalculatePrice(IEnumerable<RentalPrice> prices, double totalHours)
     {
         var interval = GetIntervalForDuration(totalHours);
 
@@ -81,7 +81,7 @@ public class BookingService : IBookingService
         return (decimal)totalHours * price.Price;
     }
 
-    private RentalInterval GetIntervalForDuration(double hours)
+    private static RentalInterval GetIntervalForDuration(double hours)
     {
         if (hours < RentalInterval.Daily.HourEquivalent)
             return RentalInterval.Hourly;

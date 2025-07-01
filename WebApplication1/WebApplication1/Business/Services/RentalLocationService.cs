@@ -29,13 +29,13 @@ public class RentalLocationService : IRentalLocationService
 
     public async Task<RentalLocation> GetByIdAsync(Guid id)
         => await _rentalLocationRepository.GetByIdAsync(id)
-           ?? throw new EntityNotFoundException("RentalLocation", id);
+           ?? throw new EntityNotFoundException(nameof(RentalLocation), id);
 
   
     public async Task UpdateAsync(Guid id, UpdateRentalLocationDto dto)
     {
         var loc = await _rentalLocationRepository.GetByIdAsync(id)
-                  ?? throw new EntityNotFoundException("RentalLocation", id);
+                  ?? throw new EntityNotFoundException(nameof(RentalLocation), id);
 
         loc.Country = dto.Country;
         loc.City = dto.City;
@@ -48,20 +48,20 @@ public class RentalLocationService : IRentalLocationService
     public async Task DeleteAsync(Guid id)
     {
         var loc = await _rentalLocationRepository.GetByIdAsync(id)
-                  ?? throw new EntityNotFoundException("RentalLocation", id);
+                  ?? throw new EntityNotFoundException(nameof(RentalLocation), id);
 
         await _rentalLocationRepository.SoftDeleteAsync(loc);
     }
 
-    public async Task<PagedResult<CarModelSummaryDto>> SearchCarModelsPagedAsync(string? country, string? city, DateTime? startDate, DateTime? endDate, int page, int pageSize)
+    public async Task<PagedResult<CarModelSummaryDto>> SearchCarModelsPagedAsync(CarModelSearchParams searchParams)
     {
-        var (items, totalCount) = await _rentalLocationRepository.SearchCarModelsAsync(country, city, startDate, endDate, page, pageSize);
+        var (items, totalCount) = await _rentalLocationRepository.SearchCarModelsAsync(searchParams);
         return new PagedResult<CarModelSummaryDto>
         {
             Items = items,
             TotalCount = totalCount,
-            Page = page,
-            PageSize = pageSize
+            Page = searchParams.Page,
+            PageSize = searchParams.PageSize
         };
     }
 }

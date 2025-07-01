@@ -31,7 +31,7 @@ public class CarModelService : ICarModelService
     public async Task<CarModelDto> GetByIdAsync(Guid id)
     {
         var model = await _carModelRepository.GetByIdAsync(id)
-                    ?? throw new EntityNotFoundException("CarModel", id);
+                    ?? throw new EntityNotFoundException(nameof(CarModel), id);
 
         return DtoMapper.ToDto(model);
     }
@@ -45,7 +45,7 @@ public class CarModelService : ICarModelService
     public async Task UpdateAsync(Guid id, UpdateCarModelDto dto)
     {
         var model = await _carModelRepository.GetByIdAsync(id)
-                    ?? throw new EntityNotFoundException("CarModel", id);
+                    ?? throw new EntityNotFoundException(nameof(CarModel), id);
 
         model.Make                    = dto.Make;
         model.ModelName              = dto.ModelName;
@@ -60,7 +60,7 @@ public class CarModelService : ICarModelService
     public async Task DeleteAsync(Guid id)
     {
         var model = await _carModelRepository.GetByIdAsync(id)
-                    ?? throw new EntityNotFoundException("CarModel", id);
+                    ?? throw new EntityNotFoundException(nameof(CarModel), id);
 
         await _carModelRepository.SoftDeleteAsync(model);
     }

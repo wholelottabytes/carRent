@@ -9,32 +9,32 @@ namespace WebApplication1.Data.Repositories
 {
     public class AdditionalServiceRepository : IAdditionalServiceRepository
     {
-        private readonly ApplicationDbContext _ctx;
-        public AdditionalServiceRepository(ApplicationDbContext ctx) => _ctx = ctx;
+        private readonly ApplicationDbContext _context;
+        public AdditionalServiceRepository(ApplicationDbContext ctx) => _context = ctx;
 
         public async Task AddAsync(AdditionalService service)
         {
-            _ctx.AdditionalServices.Add(service);
-            await _ctx.SaveChangesAsync();
+            _context.AdditionalServices.Add(service);
+            await _context.SaveChangesAsync();
         }
 
         public async Task<IEnumerable<AdditionalService>> GetByLocationIdAsync(Guid locationId)
         {
-            return await _ctx.AdditionalServices
+            return await _context.AdditionalServices
                 .Where(s => s.RentalLocationId == locationId && !s.IsDeleted)
                 .ToListAsync();
         }
 
         public async Task<AdditionalService?> GetByIdAsync(Guid id)
         {
-            return await _ctx.AdditionalServices
+            return await _context.AdditionalServices
                 .FirstOrDefaultAsync(s => s.Id == id && !s.IsDeleted);
         }
 
         public async Task UpdateAsync(AdditionalService service)
         {
-            _ctx.AdditionalServices.Update(service);
-            await _ctx.SaveChangesAsync();
+            _context.AdditionalServices.Update(service);
+            await _context.SaveChangesAsync();
         }
 
         public async Task SoftDeleteAsync(AdditionalService service)

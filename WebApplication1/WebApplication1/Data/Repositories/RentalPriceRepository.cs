@@ -5,30 +5,30 @@ using WebApplication1.Data.Repositories;
 
 public class RentalPriceRepository : IRentalPriceRepository
 {
-    private readonly ApplicationDbContext _ctx;
-    public RentalPriceRepository(ApplicationDbContext ctx) => _ctx = ctx;
+    private readonly ApplicationDbContext _context;
+    public RentalPriceRepository(ApplicationDbContext ctx) => _context = ctx;
 
     public async Task AddAsync(RentalPrice price)
     {
-        _ctx.RentalPrices.Add(price);
-        await _ctx.SaveChangesAsync();
+        _context.RentalPrices.Add(price);
+        await _context.SaveChangesAsync();
     }
 
     public async Task<RentalPrice?> GetByIdAsync(Guid id)
     {
-        return await _ctx.RentalPrices
+        return await _context.RentalPrices
             .FirstOrDefaultAsync(p => p.Id == id);
     }
 
     public async Task UpdateAsync(RentalPrice price)
     {
-        _ctx.RentalPrices.Update(price);
-        await _ctx.SaveChangesAsync();
+        _context.RentalPrices.Update(price);
+        await _context.SaveChangesAsync();
     }
 
     public async Task DeleteAsync(RentalPrice price)
     {
-        _ctx.RentalPrices.Remove(price);
-        await _ctx.SaveChangesAsync();
+        _context.RentalPrices.Remove(price);
+        await _context.SaveChangesAsync();
     }
 }

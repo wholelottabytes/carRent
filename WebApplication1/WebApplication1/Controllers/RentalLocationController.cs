@@ -36,7 +36,7 @@ public class RentalLocationController : ControllerBase
             City = loc.City,
             Name = loc.Name,
             Address = loc.Address,
-            Cars = loc.Cars?.Where(c => !c.IsDeleted).Select(c => new CarDtoLocation
+            Cars = loc.Cars?.Select(c => new CarDtoLocation
             {
                 Id = c.Id,
                 ModelName = c.CarModel?.ModelName ?? "Unknown",
@@ -88,20 +88,18 @@ public class RentalLocationController : ControllerBase
 
         return Ok(dtos);
     }
-    [HttpGet("SearchWithPagination")]
+    [HttpGet("search")]
     [Authorize(Roles = $"{Roles.AdminName},{Roles.UserName}")]
-    public async Task<ActionResult<PagedResult<CarModelSummaryDto>>> SearchWithPagination(
-        [FromQuery] string? country,
-        [FromQuery] string? city,
-        [FromQuery] DateTime? start,
-        [FromQuery] DateTime? end,
-        [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 10)
+    public async Task<IActionResult> SearchCarModels([FromQuery] CarModelSearchParams searchParams)
     {
-        var startUtc = start?.ToUniversalTime();
-        var endUtc = end?.ToUniversalTime();
+        var pagedResult = await _rentalLocationService.SearchCarModelsPagedAsync(searchParams);
 
-        var result = await _rentalLocationService.SearchCarModelsPagedAsync(country, city, startUtc, endUtc, page, pageSize);
-        return Ok(result);
+        return Ok(new
+        {
+            searchParams.Page,
+            searchParams.PageSize,
+            TotalCount = pagedResult.TotalCount,
+            Items = pagedResult.Items
+        });
     }
 }

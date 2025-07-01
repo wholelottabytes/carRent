@@ -13,7 +13,13 @@ public class CreateReviewDto
 
     public string? Comment { get; set; }
 }
+public class UpdateReviewDto
+{
+    [Range(1, 5)]
+    public int Rating { get; set; }
 
+    public string? Comment { get; set; }
+}
 public class ReviewDto
 {
     public Guid Id { get; set; }

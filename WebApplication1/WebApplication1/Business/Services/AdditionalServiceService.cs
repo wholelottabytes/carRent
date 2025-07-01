@@ -26,16 +26,16 @@ namespace WebApplication1.Business.Services
             return svc;
         }
 
-        public Task<IEnumerable<AdditionalService>> GetByLocationIdAsync(Guid locationId)
+        public async Task<IEnumerable<AdditionalService>> GetByLocationIdAsync(Guid locationId)
         {
-            return _additionalServiceRepository.GetByLocationIdAsync(locationId);
+            return await _additionalServiceRepository.GetByLocationIdAsync(locationId);
         }
 
         public async Task<AdditionalService> GetByIdAsync(Guid id)
         {
             var svc = await _additionalServiceRepository.GetByIdAsync(id);
-            if (svc == null)
-                throw new EntityNotFoundException("AdditionalService", id);
+            if (svc is null)
+                throw new EntityNotFoundException(nameof(AdditionalService), id);
 
             return svc;
         }
@@ -43,8 +43,8 @@ namespace WebApplication1.Business.Services
         public async Task UpdateAsync(Guid id, UpdateAdditionalServiceDto dto)
         {
             var svc = await _additionalServiceRepository.GetByIdAsync(id);
-            if (svc == null)
-                throw new EntityNotFoundException("AdditionalService", id);
+            if (svc is null)
+                throw new EntityNotFoundException(nameof(AdditionalService), id);
 
             svc.Name             = dto.Name;
             svc.Price            = dto.Price;
@@ -55,8 +55,8 @@ namespace WebApplication1.Business.Services
         public async Task DeleteAsync(Guid id)
         {
             var svc = await _additionalServiceRepository.GetByIdAsync(id);
-            if (svc == null)
-                throw new EntityNotFoundException("AdditionalService", id);
+            if (svc is null)
+                throw new EntityNotFoundException(nameof(AdditionalService), id);
 
             await _additionalServiceRepository.SoftDeleteAsync(svc);
         }

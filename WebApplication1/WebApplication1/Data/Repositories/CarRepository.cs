@@ -9,17 +9,17 @@ namespace WebApplication1.Data.Repositories
 {
     public class CarRepository : ICarRepository
     {
-        private readonly ApplicationDbContext _ctx;
-        public CarRepository(ApplicationDbContext ctx) => _ctx = ctx;
+        private readonly ApplicationDbContext _context;
+        public CarRepository(ApplicationDbContext ctx) => _context = ctx;
 
         public async Task AddAsync(Car car)
         {
-            _ctx.Cars.Add(car);
-            await _ctx.SaveChangesAsync();
+            _context.Cars.Add(car);
+            await _context.SaveChangesAsync();
         }
 
         public async Task<Car> GetByIdAsync(Guid id) =>
-            await _ctx.Cars
+            await _context.Cars
                 .Include(c=>c.CarModel)
                 .ThenInclude(c => c.Images)
                 .Include(c=>c.CarModel)
@@ -28,12 +28,12 @@ namespace WebApplication1.Data.Repositories
             ?? throw new KeyNotFoundException();
 
         public async Task<IEnumerable<Car>> ListAsync() =>
-            await _ctx.Cars.Where(c => !c.IsDeleted).ToListAsync();
+            await _context.Cars.Where(c => !c.IsDeleted).ToListAsync();
 
         public async Task UpdateAsync(Car car)
         {
-            _ctx.Cars.Update(car);
-            await _ctx.SaveChangesAsync();
+            _context.Cars.Update(car);
+            await _context.SaveChangesAsync();
         }
 
         public async Task SoftDeleteAsync(Car car)

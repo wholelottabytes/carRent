@@ -10,7 +10,6 @@ public interface IRentalLocationRepository
     Task AddAsync(RentalLocation loc);
     Task UpdateAsync(RentalLocation loc);
     Task SoftDeleteAsync(RentalLocation loc);
-    Task<(IEnumerable<CarModelSummaryDto> Items, int TotalCount)> SearchCarModelsAsync(
-        string? country, string? city, DateTime? startDate, DateTime? endDate, int page, int pageSize);
+    Task<(IEnumerable<CarModelSummaryDto> Items, int TotalCount)> SearchCarModelsAsync(CarModelSearchParams searchParams);
 
 }

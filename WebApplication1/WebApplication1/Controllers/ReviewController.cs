@@ -35,15 +35,15 @@ public class ReviewController : ControllerBase
     }
 
     [HttpGet("{rentalLocationId}")]
-    public async Task<IActionResult> GetByRentalLocation(Guid rentalLocationId, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+    public async Task<IActionResult> GetByRentalLocation(Guid rentalLocationId, [FromQuery] PaginationParams pagination)
     {
-        var reviews = await _reviewService.GetReviewsAsync(rentalLocationId, page, pageSize);
+        var reviews = await _reviewService.GetReviewsAsync(rentalLocationId, pagination);
         var totalCount = await _reviewService.GetReviewsCountAsync(rentalLocationId);
 
         var response = new
         {
-            Page = page,
-            PageSize = pageSize,
+            Page = pagination.Page,
+            PageSize = pagination.PageSize,
             TotalCount = totalCount,
             Reviews = reviews.Select(r => new ReviewDto
             {
@@ -57,5 +57,15 @@ public class ReviewController : ControllerBase
         };
 
         return Ok(response);
+    }
+    [HttpPut("{reviewId}")]
+    [Authorize]
+    public async Task<IActionResult> Update(Guid reviewId, [FromBody] UpdateReviewDto dto)
+    {
+        var userId = User.Identity?.Name ?? throw new UnauthorizedAccessException();
+
+        var updatedReview = await _reviewService.UpdateReviewAsync(reviewId, dto, userId);
+
+        return Ok(updatedReview);
     }
 }

@@ -5,30 +5,30 @@ using WebApplication1.Data.Repositories;
 
 public class CarImageRepository : ICarImageRepository
 {
-    private readonly ApplicationDbContext _ctx;
+    private readonly ApplicationDbContext _context;
 
-    public CarImageRepository(ApplicationDbContext ctx) => _ctx = ctx;
+    public CarImageRepository(ApplicationDbContext ctx) => _context = ctx;
 
     public async Task AddAsync(CarImage image)
     {
-        _ctx.CarImages.Add(image);
-        await _ctx.SaveChangesAsync();
+        _context.CarImages.Add(image);
+        await _context.SaveChangesAsync();
     }
 
     public async Task DeleteAsync(CarImage image)
     {
-        _ctx.CarImages.Remove(image);
-        await _ctx.SaveChangesAsync();
+        _context.CarImages.Remove(image);
+        await _context.SaveChangesAsync();
     }
 
     public async Task<CarImage?> GetByIdAsync(Guid id)
     {
-        return await _ctx.CarImages.FindAsync(id);
+        return await _context.CarImages.FindAsync(id);
     }
 
     public async Task<IEnumerable<CarImage>> GetByCarIdAsync(Guid carId)
     {
-        return await _ctx.CarImages
+        return await _context.CarImages
             .Where(i => i.CarModelId == carId)
             .ToListAsync();
     }

@@ -11,7 +11,6 @@ public interface IRentalLocationService
     Task UpdateAsync(Guid id, UpdateRentalLocationDto dto);
     Task DeleteAsync(Guid id);
 
-    Task<PagedResult<CarModelSummaryDto>> SearchCarModelsPagedAsync(string? country, string? city, DateTime? startDate,
-        DateTime? endDate, int page, int pageSize);
+    Task<PagedResult<CarModelSummaryDto>> SearchCarModelsPagedAsync(CarModelSearchParams searchParams);
 
 }

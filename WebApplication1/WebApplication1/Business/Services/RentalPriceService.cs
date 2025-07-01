@@ -25,7 +25,7 @@ public class RentalPriceService : IRentalPriceService
     public async Task<RentalPriceDto> GetByIdAsync(Guid id)
     {
         var price = await _rentalPriceRepository.GetByIdAsync(id)
-                    ?? throw new EntityNotFoundException("RentalPrice", id);
+                    ?? throw new EntityNotFoundException(nameof(RentalPrice), id);
 
         return new RentalPriceDto
         {
@@ -39,7 +39,7 @@ public class RentalPriceService : IRentalPriceService
     public async Task UpdateAsync(Guid id, UpdateRentalPriceDto dto)
     {
         var price = await _rentalPriceRepository.GetByIdAsync(id)
-                    ?? throw new EntityNotFoundException("RentalPrice", id);
+                    ?? throw new EntityNotFoundException(nameof(RentalPrice), id);
 
         price.PriceType = dto.PriceType;
         price.Price     = dto.Price;
@@ -50,7 +50,7 @@ public class RentalPriceService : IRentalPriceService
     public async Task DeleteAsync(Guid id)
     {
         var price = await _rentalPriceRepository.GetByIdAsync(id)
-                    ?? throw new EntityNotFoundException("RentalPrice", id);
+                    ?? throw new EntityNotFoundException(nameof(RentalPrice), id);
 
         await _rentalPriceRepository.DeleteAsync(price);
     }

@@ -1,3 +1,4 @@
+using WebApplication1.Common.DTOs;
 using WebApplication1.Data.Models;
 
 namespace WebApplication1.Business.Services;
@@ -5,6 +6,7 @@ namespace WebApplication1.Business.Services;
 public interface IReviewService
 {
     Task<Review> CreateReviewAsync(Review review);
-    Task<IEnumerable<Review>> GetReviewsAsync(Guid rentalLocationId, int page, int pageSize);
+    Task<IEnumerable<Review>> GetReviewsAsync(Guid rentalLocationId, PaginationParams pagination);
     Task<int> GetReviewsCountAsync(Guid rentalLocationId);
+    Task<Review> UpdateReviewAsync(Guid reviewId, UpdateReviewDto dto, string userId);
 }

@@ -5,26 +5,26 @@ using WebApplication1.Data.Repositories;
 
 public class CarModelRepository : ICarModelRepository
 {
-    private readonly ApplicationDbContext _ctx;
+    private readonly ApplicationDbContext _context;
 
-    public CarModelRepository(ApplicationDbContext ctx) => _ctx = ctx;
+    public CarModelRepository(ApplicationDbContext ctx) => _context = ctx;
 
     public async Task AddAsync(CarModel m)
     {
-        _ctx.CarModels.Add(m);
-        await _ctx.SaveChangesAsync();
+        _context.CarModels.Add(m);
+        await _context.SaveChangesAsync();
     }
 
     public async Task<CarModel?> GetByIdAsync(Guid id)
     {
-        return await _ctx.CarModels
+        return await _context.CarModels
             .Include(m => m.Cars.Where(c => !c.IsDeleted))
             .FirstOrDefaultAsync(m => m.Id == id && !m.IsDeleted);
     }
 
     public async Task<IEnumerable<CarModel>> ListAsync()
     {
-        return await _ctx.CarModels
+        return await _context.CarModels
             .Include(m => m.Cars.Where(c => !c.IsDeleted))
             .Where(m => !m.IsDeleted)
             .ToListAsync();
@@ -32,8 +32,8 @@ public class CarModelRepository : ICarModelRepository
 
     public async Task UpdateAsync(CarModel m)
     {
-        _ctx.CarModels.Update(m);
-        await _ctx.SaveChangesAsync();
+        _context.CarModels.Update(m);
+        await _context.SaveChangesAsync();
     }
 
     public async Task SoftDeleteAsync(CarModel m)

@@ -13,7 +13,9 @@ using System.Text;
 using WebApplication1.Common.Constants;
 using WebApplication1.Common.Extensions;
 using System.Text.Json.Serialization;
-using WebApplication1.Common.Middleware;
+using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.AspNetCore.Mvc;
+using WebApplication1.Common.Exceptions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -74,7 +76,35 @@ var app = builder.Build();
 
 await app.Services.SeedIdentityAsync();
 app.UseStaticFiles();
-app.UseExceptionHandling();
+app.UseExceptionHandler(errorApp =>
+{
+    errorApp.Run(async context =>
+    {
+        var exceptionFeature = context.Features.Get<IExceptionHandlerPathFeature>();
+        var exception = exceptionFeature?.Error;
+
+        var statusCode = exception switch
+        {
+            EntityNotFoundException => StatusCodes.Status404NotFound,
+            DomainValidationException => StatusCodes.Status400BadRequest,
+            ConflictException => StatusCodes.Status409Conflict,
+            BadRequestException => StatusCodes.Status400BadRequest,
+            _ => StatusCodes.Status500InternalServerError
+        };
+
+        var problemDetails = new ProblemDetails
+        {
+            Title = "An error occurred while processing your request.",
+            Status = statusCode,
+            Detail = exception?.Message,
+            Type = $"https://httpstatuses.com/{statusCode}"
+        };
+
+        context.Response.ContentType = "application/json";
+        context.Response.StatusCode = statusCode;
+        await context.Response.WriteAsJsonAsync(problemDetails);
+    });
+});
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

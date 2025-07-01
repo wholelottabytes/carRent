@@ -16,7 +16,7 @@ public class CarImageService : ICarImageService
 
     public async Task<string> AddImageAsync(Guid CarModelId, IFormFile file)
     {
-        if (file == null || file.Length == 0)
+        if (file is null || file.Length == 0)
             throw new BadRequestException("No file uploaded");
 
         var allowedExtensions = new[] { ".jpg", ".jpeg", ".png" };
@@ -56,7 +56,7 @@ public class CarImageService : ICarImageService
     public async Task DeleteImageAsync(Guid imageId)
     {
         var image = await _carImageRepository.GetByIdAsync(imageId);
-        if (image == null)
+        if (image is null)
             throw new EntityNotFoundException("CarImage", imageId);
 
         if (string.IsNullOrEmpty(_environment.WebRootPath))

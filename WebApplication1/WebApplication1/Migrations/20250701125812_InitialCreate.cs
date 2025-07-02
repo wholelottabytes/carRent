@@ -7,7 +7,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace WebApplication1.Migrations
 {
     /// <inheritdoc />
-    public partial class PriceCarLink : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -198,6 +198,45 @@ namespace WebApplication1.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "CarImages",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    Url = table.Column<string>(type: "text", nullable: false),
+                    CarModelId = table.Column<Guid>(type: "uuid", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_CarImages", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_CarImages_CarModels_CarModelId",
+                        column: x => x.CarModelId,
+                        principalTable: "CarModels",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "RentalPrices",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    CarModelId = table.Column<Guid>(type: "uuid", nullable: false),
+                    PriceType = table.Column<int>(type: "integer", nullable: false),
+                    Price = table.Column<decimal>(type: "numeric", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_RentalPrices", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_RentalPrices_CarModels_CarModelId",
+                        column: x => x.CarModelId,
+                        principalTable: "CarModels",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "AdditionalServices",
                 columns: table => new
                 {
@@ -224,7 +263,7 @@ namespace WebApplication1.Migrations
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
-                    IsAvailable = table.Column<bool>(type: "boolean", nullable: false),
+                    IsEnabled = table.Column<bool>(type: "boolean", nullable: false),
                     CarModelId = table.Column<Guid>(type: "uuid", nullable: false),
                     RentalLocationId = table.Column<Guid>(type: "uuid", nullable: false)
                 },
@@ -236,7 +275,7 @@ namespace WebApplication1.Migrations
                         column: x => x.CarModelId,
                         principalTable: "CarModels",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_Cars_RentalLocations_RentalLocationId",
                         column: x => x.RentalLocationId,
@@ -308,45 +347,6 @@ namespace WebApplication1.Migrations
                         name: "FK_Bookings_RentalLocations_RentalLocationId",
                         column: x => x.RentalLocationId,
                         principalTable: "RentalLocations",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "CarImages",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    Url = table.Column<string>(type: "text", nullable: false),
-                    CarId = table.Column<Guid>(type: "uuid", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_CarImages", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_CarImages_Cars_CarId",
-                        column: x => x.CarId,
-                        principalTable: "Cars",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "RentalPrices",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    CarId = table.Column<Guid>(type: "uuid", nullable: false),
-                    PriceType = table.Column<int>(type: "integer", nullable: false),
-                    Price = table.Column<decimal>(type: "numeric", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_RentalPrices", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_RentalPrices_Cars_CarId",
-                        column: x => x.CarId,
-                        principalTable: "Cars",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -438,9 +438,9 @@ namespace WebApplication1.Migrations
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_CarImages_CarId",
+                name: "IX_CarImages_CarModelId",
                 table: "CarImages",
-                column: "CarId");
+                column: "CarModelId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Cars_CarModelId",
@@ -453,9 +453,9 @@ namespace WebApplication1.Migrations
                 column: "RentalLocationId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_RentalPrices_CarId",
+                name: "IX_RentalPrices_CarModelId",
                 table: "RentalPrices",
-                column: "CarId");
+                column: "CarModelId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Reviews_RentalLocationId",

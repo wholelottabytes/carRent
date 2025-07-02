@@ -12,8 +12,8 @@ using WebApplication1.Data.Context;
 namespace WebApplication1.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250626133754_PriceCarLink")]
-    partial class PriceCarLink
+    [Migration("20250701125812_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -328,10 +328,10 @@ namespace WebApplication1.Migrations
                     b.Property<Guid>("CarModelId")
                         .HasColumnType("uuid");
 
-                    b.Property<bool>("IsAvailable")
+                    b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
-                    b.Property<bool>("IsDeleted")
+                    b.Property<bool>("IsEnabled")
                         .HasColumnType("boolean");
 
                     b.Property<Guid>("RentalLocationId")
@@ -352,7 +352,7 @@ namespace WebApplication1.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("CarId")
+                    b.Property<Guid>("CarModelId")
                         .HasColumnType("uuid");
 
                     b.Property<string>("Url")
@@ -361,7 +361,7 @@ namespace WebApplication1.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CarId");
+                    b.HasIndex("CarModelId");
 
                     b.ToTable("CarImages");
                 });
@@ -443,7 +443,7 @@ namespace WebApplication1.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("CarId")
+                    b.Property<Guid>("CarModelId")
                         .HasColumnType("uuid");
 
                     b.Property<decimal>("Price")
@@ -454,7 +454,7 @@ namespace WebApplication1.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CarId");
+                    b.HasIndex("CarModelId");
 
                     b.ToTable("RentalPrices");
                 });
@@ -606,7 +606,7 @@ namespace WebApplication1.Migrations
                     b.HasOne("WebApplication1.Data.Models.CarModel", "CarModel")
                         .WithMany("Cars")
                         .HasForeignKey("CarModelId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("WebApplication1.Data.Models.RentalLocation", "RentalLocation")
@@ -622,22 +622,24 @@ namespace WebApplication1.Migrations
 
             modelBuilder.Entity("WebApplication1.Data.Models.CarImage", b =>
                 {
-                    b.HasOne("WebApplication1.Data.Models.Car", "Car")
+                    b.HasOne("WebApplication1.Data.Models.CarModel", "CarModel")
                         .WithMany("Images")
-                        .HasForeignKey("CarId")
+                        .HasForeignKey("CarModelId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Car");
+                    b.Navigation("CarModel");
                 });
 
             modelBuilder.Entity("WebApplication1.Data.Models.RentalPrice", b =>
                 {
-                    b.HasOne("WebApplication1.Data.Models.Car", null)
+                    b.HasOne("WebApplication1.Data.Models.CarModel", "CarModel")
                         .WithMany("RentalPrices")
-                        .HasForeignKey("CarId")
+                        .HasForeignKey("CarModelId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("CarModel");
                 });
 
             modelBuilder.Entity("WebApplication1.Data.Models.Review", b =>
@@ -679,15 +681,15 @@ namespace WebApplication1.Migrations
             modelBuilder.Entity("WebApplication1.Data.Models.Car", b =>
                 {
                     b.Navigation("Bookings");
-
-                    b.Navigation("Images");
-
-                    b.Navigation("RentalPrices");
                 });
 
             modelBuilder.Entity("WebApplication1.Data.Models.CarModel", b =>
                 {
                     b.Navigation("Cars");
+
+                    b.Navigation("Images");
+
+                    b.Navigation("RentalPrices");
                 });
 
             modelBuilder.Entity("WebApplication1.Data.Models.RentalLocation", b =>

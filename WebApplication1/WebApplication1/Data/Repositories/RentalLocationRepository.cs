@@ -68,31 +68,37 @@ public class RentalLocationRepository : IRentalLocationRepository
                 !c.Bookings.Any(b => !b.IsDeleted && searchParams.StartDate < b.EndDate && searchParams.EndDate > b.StartDate));
         }
 
-        var grouped = query
-            .GroupBy(c => c.CarModel!)
+        // Группируем в памяти
+        var groupedInMemory = await query
+            .AsNoTracking()
+            .ToListAsync();
+
+        var groupedModels = groupedInMemory
+            .GroupBy(c => c.CarModel)
             .Select(g => new CarModelSummaryDto
             {
-                CarModelId = g.Key.Id,
+                CarModelId = g.Key!.Id,
                 ModelName = g.Key.ModelName,
                 Make = g.Key.Make,
                 AvailableCarsCount = g.Count(),
-                RentalPrices = g.Key.RentalPrices.Select(rp => new RentalPriceDto
-                {
-                    Id = rp.Id,
-                    Price = rp.Price,
-                    PriceType = rp.PriceType
-                }).ToList()
+                RentalPrices = g.Key.RentalPrices
+                    .Select(rp => new RentalPriceDto
+                    {
+                        Id = rp.Id,
+                        Price = rp.Price,
+                        PriceType = rp.PriceType
+                    }).ToList()
             })
-            .OrderBy(cm => cm.ModelName);
+            .OrderBy(cm => cm.ModelName)
+            .ToList();
 
-        var totalCount = await grouped.CountAsync();
+        var totalCount = groupedModels.Count;
 
-        var items = await grouped
+        var items = groupedModels
             .Skip((searchParams.Page - 1) * searchParams.PageSize)
             .Take(searchParams.PageSize)
-            .ToListAsync();
+            .ToList();
 
         return (items, totalCount);
     }
-
 }

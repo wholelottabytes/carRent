@@ -88,7 +88,7 @@ public class RentalLocationController : ControllerBase
 
         return Ok(dtos);
     }
-    [HttpGet("search")]
+    [HttpGet]
     [Authorize(Roles = $"{Roles.AdminName},{Roles.UserName}")]
     public async Task<IActionResult> SearchCarModels([FromQuery] CarModelSearchParams searchParams)
     {

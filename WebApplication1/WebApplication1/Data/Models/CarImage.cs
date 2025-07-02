@@ -10,8 +10,8 @@ namespace WebApplication1.Data.Models
         [Required]
         public string Url { get; set; } = null!;
 
-        // Foreign key
-        public Guid  CarId { get; set; }
-        public Car? Car { get; set; }
+        [Required]
+        public Guid CarModelId { get; set; }
+        public CarModel? CarModel { get; set; }
     }
 }

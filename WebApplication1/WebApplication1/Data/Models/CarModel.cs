@@ -12,7 +12,7 @@ namespace WebApplication1.Data.Models
     {
         [Key]
         public Guid Id { get; set; } = Guid.NewGuid();
-
+        public bool IsDeleted { get; set; } = false;
         [Required]
         public string Make { get; set; } = null!; 
 
@@ -21,6 +21,8 @@ namespace WebApplication1.Data.Models
 
         [Required]
         public int Year { get; set; }
+        
+        
 
         [Required]
         public TransmissionType Transmission { get; set; }
@@ -32,5 +34,8 @@ namespace WebApplication1.Data.Models
         public double FuelConsumptionPer100Km { get; set; }
 
         public ICollection<Car>? Cars { get; set; }
+        public ICollection<CarImage>? Images { get; set; }
+        public ICollection<RentalPrice>? RentalPrices { get; set; }
+
     }
 }

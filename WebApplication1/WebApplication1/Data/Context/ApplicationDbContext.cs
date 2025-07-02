@@ -27,11 +27,7 @@ namespace WebApplication1.Data.Context
                 .Property(cm => cm.Transmission)
                 .HasConversion<string>();
 
-            builder.Entity<Car>()
-                .HasOne(c => c.CarModel)
-                .WithMany(cm => cm.Cars)
-                .HasForeignKey(c => c.CarModelId)
-                .OnDelete(DeleteBehavior.Restrict); 
+           
 
             builder.Entity<BookingAdditionalService>()
                 .HasKey(bas => new { bas.BookingId, bas.AdditionalServiceId });
@@ -63,11 +59,7 @@ namespace WebApplication1.Data.Context
                     t.HasCheckConstraint("CK_Review_Rating_Range", 
                         $"\"{nameof(Review.Rating)}\" >= 1 AND \"{nameof(Review.Rating)}\" <= 5"));
             
-            builder.Entity<RentalPrice>()
-                .HasOne(rp => rp.Car)
-                .WithMany(c => c.RentalPrices)
-                .HasForeignKey(rp => rp.CarId)
-                .OnDelete(DeleteBehavior.Cascade);
+        
         }
     }
 }

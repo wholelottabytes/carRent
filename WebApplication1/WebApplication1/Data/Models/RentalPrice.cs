@@ -27,7 +27,7 @@ namespace WebApplication1.Data.Models
         public static RentalInterval TwoDays = new(PriceType.TwoDays, 48);
         public static RentalInterval Weekly = new(PriceType.Weekly, 168);
 
-        public static RentalInterval ForPriceType(PriceType priceType) => priceType switch
+        public static RentalInterval FromPriceType(PriceType priceType) => priceType switch
         {
             PriceType.Hourly => Hourly,
             PriceType.Daily => Daily,
@@ -43,16 +43,17 @@ namespace WebApplication1.Data.Models
         public Guid Id { get; set; } = Guid.NewGuid();
 
         [Required]
-        public Guid CarId { get; set; }
-        public Car? Car { get; set; }
+        public Guid CarModelId { get; set; }
+        public CarModel? CarModel { get; set; }
 
         [Required]
-        public PriceType PriceType { get; set; } 
-        
+        public PriceType PriceType { get; set; }
+
         [NotMapped]
-        public RentalInterval Interval => RentalInterval.ForPriceType(PriceType);
+        public RentalInterval Interval => RentalInterval.FromPriceType(PriceType);
 
         [Required]
         public decimal Price { get; set; }
     }
+
 }

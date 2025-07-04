@@ -1,7 +1,6 @@
-// app/profile/page.tsx
 'use client';
 
-import { useEffect, useState, useContext } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Container,
   Typography,
@@ -10,8 +9,9 @@ import {
   Box,
   Stack,
 } from '@mui/material';
-import { AuthContext } from '../../contexts/AuthContext';
-import { fetcher } from '../../lib/fetcher';
+import { useAppDispatch } from '@/lib/hooks';
+import { logout } from '@/features/auth/authSlice';
+import { fetcher } from '@/lib/fetcher';
 
 type Profile = {
   id: string;
@@ -22,7 +22,8 @@ type Profile = {
 };
 
 export default function ProfilePage() {
-  const { logout } = useContext(AuthContext);
+  const dispatch = useAppDispatch();
+
   const [profile, setProfile] = useState<Profile | null>(null);
   const [editMode, setEditMode] = useState(false);
   const [form, setForm] = useState({
@@ -107,7 +108,11 @@ export default function ProfilePage() {
             <Button variant="outlined" onClick={() => setEditMode(true)}>
               Редактировать
             </Button>
-            <Button variant="outlined" color="error" onClick={logout}>
+            <Button
+              variant="outlined"
+              color="error"
+              onClick={() => dispatch(logout())}
+            >
               Выйти
             </Button>
           </Stack>

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Container, Box } from '@mui/material';
+import { Container, Box, Typography } from '@mui/material';
 import ModelCard from '../components/ModelCard';
 import { fetcher } from '../lib/fetcher';
 
@@ -10,14 +10,32 @@ type Photo = {
   url: string;
 };
 
+type RentalPriceDto = {
+  id: string;
+  carModelId: string;
+  priceType: 'Hourly' | 'Daily' | 'TwoDays' | 'Weekly';
+  price: number;
+};
+
+interface RentalLocationDto {
+  id: string;
+  name: string;
+  city: string;
+  address: string;
+}
 type CarModel = {
   carModelId: string;
   modelName: string;
   make: string;
-  hourlyPrice?: number; // если есть в API
+  year: number;
+  transmission: string;
+  seatingCapacity: number;
+  fuelConsumptionPer100Km: number;
+  availableCarsCount: number;
+  rentalPrices?: RentalPriceDto[];
+  availableAtLocations?: RentalLocationDto[];
   photos?: Photo[];
 };
-
 export default function HomePage() {
   const [models, setModels] = useState<CarModel[]>([]);
 
@@ -34,7 +52,13 @@ export default function HomePage() {
           return;
         }
 
-        const models: CarModel[] = dataModels.items;
+        const models: CarModel[] = dataModels.items.map((model: any) => {
+          const hourly = model.rentalPrices?.find((p: any) => p.priceType === 'Hourly');
+          return {
+            ...model,
+            hourlyPrice: hourly?.price ?? undefined,
+          };
+        });
 
         const modelsWithPhotos = await Promise.all(
           models.map(async (model) => {
@@ -65,21 +89,25 @@ export default function HomePage() {
   }, [apiBaseUrl]);
 
   return (
-    <Container>
+    <Container sx={{ mt: 4 }}>
+      <Typography variant="h4" gutterBottom>
+        Доступные автомобили
+      </Typography>
       <Box
         sx={{
           display: 'grid',
-          gap: 2,
+          gap: 3,
           gridTemplateColumns: {
             xs: '1fr',
             sm: '1fr 1fr',
             md: '1fr 1fr 1fr',
+            lg: '1fr 1fr 1fr 1fr',
           },
         }}
       >
-        {models.map((m, index) => (
-  <ModelCard key={`${m.carModelId}-${index}`} model={m} />
-))}
+        {models.map((m) => (
+          <ModelCard key={m.carModelId} model={m} />
+        ))}
       </Box>
     </Container>
   );

@@ -1,10 +1,11 @@
 'use client';
 import { CssBaseline } from '@mui/material';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
-import { AuthProvider } from '../contexts/AuthContext';
+import { ReduxProvider } from '@/lib/redux-provider';
 import Navbar from '../components/Navbar';
 
 const theme = createTheme();
+
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -12,12 +13,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <ThemeProvider theme={theme}>
           <CssBaseline />
-          <AuthProvider>
+          <ReduxProvider>
             <Navbar />
             <main>{children}</main>
-          </AuthProvider>
+          </ReduxProvider>
         </ThemeProvider>
       </body>
     </html>
   );
 }
+

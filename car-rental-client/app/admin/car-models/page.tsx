@@ -11,7 +11,7 @@ import {
   IconButton,
 } from '@mui/material';
 import { Add as AddIcon, Delete as DeleteIcon } from '@mui/icons-material';
-import { fetcher } from '../../../lib/fetcher';
+import { fetcher } from '@/lib/fetcher';
 
 type PriceRow = {
   priceType: 'Hourly' | 'Daily' | 'TwoDays' | 'Weekly';
@@ -37,44 +37,56 @@ export default function CarModelsAdminPage() {
   const onRemovePrice = (idx: number) =>
     setPrices((prev) => prev.filter((_, i) => i !== idx));
 
-  const onSubmit = async () => {
-    // 1) Create model
+const onSubmit = async () => {
+  let modelId = '';
+  try {
     const res1 = await fetcher('/api/CarModel/Create', {
       method: 'POST',
       body: JSON.stringify(form),
     });
     const model = await res1.json();
+    modelId = model.id;
 
-    // 2) Upload images
-    for (const file of files) {
+    const uploadPromises = files.map((file) => {
       const fd = new FormData();
       fd.append('file', file);
-      await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/CarImage/Upload/${model.id}`,
-        {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`,
-          },
-          body: fd,
-        }
-      );
-    }
+      return fetcher(`/api/CarImage/Upload/${modelId}`, {
+        method: 'POST',
+        body: fd,
+      });
+    });
 
-    // 3) Create prices
-    for (const p of prices) {
-      await fetcher('/api/RentalPrice/Create', {
+    const pricePromises = prices.map((p) =>
+      fetcher('/api/RentalPrice/Create', {
         method: 'POST',
         body: JSON.stringify({
-          carModelId: model.id,
+          carModelId: modelId,
           priceType: p.priceType,
           price: p.price,
         }),
-      });
-    }
+      })
+    );
+
+    await Promise.all([...uploadPromises, ...pricePromises]);
 
     window.location.reload();
-  };
+  } catch (error) {
+    console.error('Ошибка при сохранении модели:', error);
+
+    if (modelId) {
+      try {
+        await fetcher(`/api/CarModel/Delete/${modelId}`, {
+          method: 'DELETE',
+        });
+        console.warn('Созданная модель была удалена из-за ошибки');
+      } catch (delErr) {
+        console.error('Ошибка при удалении модели после сбоя:', delErr);
+      }
+    }
+
+    alert('Ошибка при сохранении модели. Проверьте консоль.');
+  }
+};
 
   return (
     <Container>
@@ -91,7 +103,6 @@ export default function CarModelsAdminPage() {
           alignItems: 'start',
         }}
       >
-        {/* Марка */}
         <TextField
           label="Марка"
           fullWidth
@@ -100,7 +111,6 @@ export default function CarModelsAdminPage() {
           sx={{ gridColumn: 'span 6' }}
         />
 
-        {/* Модель */}
         <TextField
           label="Модель"
           fullWidth
@@ -111,7 +121,6 @@ export default function CarModelsAdminPage() {
           sx={{ gridColumn: 'span 6' }}
         />
 
-        {/* Год */}
         <TextField
           label="Год"
           type="number"
@@ -121,7 +130,6 @@ export default function CarModelsAdminPage() {
           sx={{ gridColumn: 'span 4' }}
         />
 
-        {/* Коробка */}
         <TextField
           select
           label="Коробка"
@@ -139,7 +147,6 @@ export default function CarModelsAdminPage() {
           ))}
         </TextField>
 
-        {/* Мест */}
         <TextField
           label="Мест"
           type="number"
@@ -154,7 +161,6 @@ export default function CarModelsAdminPage() {
           sx={{ gridColumn: 'span 4' }}
         />
 
-        {/* Расход */}
         <TextField
           label="Расход л/100км"
           type="number"
@@ -169,7 +175,6 @@ export default function CarModelsAdminPage() {
           sx={{ gridColumn: 'span 6' }}
         />
 
-        {/* Загрузка фото */}
         <Box sx={{ gridColumn: 'span 6' }}>
           <Button variant="outlined" component="label" fullWidth>
             Загрузить фото
@@ -190,12 +195,10 @@ export default function CarModelsAdminPage() {
           </Box>
         </Box>
 
-        {/* Заголовок «Цены» */}
         <Typography variant="h6" sx={{ gridColumn: 'span 12' }}>
           Цены
         </Typography>
 
-        {/* Ряд цен */}
         {prices.map((p, i) => (
           <Box
             key={i}
@@ -252,7 +255,6 @@ export default function CarModelsAdminPage() {
           </Box>
         ))}
 
-        {/* Кнопка добавить цену */}
         <Button
           startIcon={<AddIcon />}
           onClick={onAddPrice}
@@ -261,7 +263,6 @@ export default function CarModelsAdminPage() {
           Добавить цену
         </Button>
 
-        {/* Сохранить модель */}
         <Box sx={{ gridColumn: 'span 12' }}>
           <Button variant="contained" onClick={onSubmit} fullWidth>
             Сохранить модель

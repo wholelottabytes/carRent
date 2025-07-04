@@ -17,7 +17,7 @@ import {
   Typography,
 } from '@mui/material';
 import { Delete as DeleteIcon } from '@mui/icons-material';
-import { fetcher } from '../../../lib/fetcher';
+import { fetcher } from '@/lib/fetcher';
 
 export default function CarsAdminPage() {
   const [locations, setLocations] = useState<any[]>([]);
@@ -79,7 +79,7 @@ export default function CarsAdminPage() {
 
         <TextField
           select
-          label="Локация"
+          label="Точка аренды"
           value={form.rentalLocationId}
           onChange={(e) => setForm({ ...form, rentalLocationId: e.target.value })}
           fullWidth

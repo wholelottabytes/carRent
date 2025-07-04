@@ -1,25 +1,75 @@
 'use client';
+
 import { useForm } from 'react-hook-form';
 import { TextField, Button, Container, Typography } from '@mui/material';
-import { useContext } from 'react';
-import { AuthContext } from '../../contexts/AuthContext';
+import { useAppDispatch } from '@/lib/hooks';
+import { register as registerThunk } from '@/features/auth/authSlice';
+import { useRouter } from 'next/navigation';
+
+type RegisterFormData = {
+  email: string;
+  password: string;
+  firstName?: string;
+  lastName?: string;
+  licenseNumber?: string;
+};
 
 export default function RegisterPage() {
-  const { register: reg, handleSubmit } = useForm();
-  const { register: doRegister } = useContext(AuthContext);
+  const { register, handleSubmit } = useForm<RegisterFormData>();
+  const dispatch = useAppDispatch();
+  const router = useRouter();
 
-  const onSubmit = (data: any) => doRegister(data);
+  const onSubmit = async (data: RegisterFormData) => {
+    try {
+      await dispatch(registerThunk(data)).unwrap();
+      router.push('/');
+    } catch (error) {
+      console.error('Ошибка регистрации:', error);
+      alert('Ошибка регистрации');
+    }
+  };
 
   return (
     <Container maxWidth="xs">
-      <Typography variant="h5">Регистрация</Typography>
+      <Typography variant="h5" gutterBottom>
+        Регистрация
+      </Typography>
       <form onSubmit={handleSubmit(onSubmit)}>
-        <TextField fullWidth label="Email" {...reg('email')} margin="normal" />
-        <TextField fullWidth label="Пароль" type="password" {...reg('password')} margin="normal" />
-        <TextField fullWidth label="Имя" {...reg('firstName')} margin="normal" />
-        <TextField fullWidth label="Фамилия" {...reg('lastName')} margin="normal" />
-        <TextField fullWidth label="Номер прав" {...reg('licenseNumber')} margin="normal" />
-        <Button type="submit" variant="contained" fullWidth>Зарегистрироваться</Button>
+        <TextField
+          fullWidth
+          label="Email"
+          {...register('email', { required: true })}
+          margin="normal"
+          type="email"
+        />
+        <TextField
+          fullWidth
+          label="Пароль"
+          {...register('password', { required: true })}
+          margin="normal"
+          type="password"
+        />
+        <TextField
+          fullWidth
+          label="Имя"
+          {...register('firstName')}
+          margin="normal"
+        />
+        <TextField
+          fullWidth
+          label="Фамилия"
+          {...register('lastName')}
+          margin="normal"
+        />
+        <TextField
+          fullWidth
+          label="Номер прав"
+          {...register('licenseNumber')}
+          margin="normal"
+        />
+        <Button type="submit" variant="contained" fullWidth sx={{ mt: 2 }}>
+          Зарегистрироваться
+        </Button>
       </form>
     </Container>
   );

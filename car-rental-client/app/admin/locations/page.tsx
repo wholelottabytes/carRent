@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { Button, Container, TextField, List, ListItem } from '@mui/material';
-import { fetcher } from '../../../lib/fetcher';
+import { fetcher } from '@/lib/fetcher';
 
 export default function LocationsPage() {
   const [list, setList] = useState<any[]>([]);

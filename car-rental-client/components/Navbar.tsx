@@ -1,16 +1,16 @@
-// components/Navbar.tsx
 'use client';
 
-import { useContext, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { AppBar, Toolbar, Typography, Button, Box } from '@mui/material';
-import { AuthContext } from '../contexts/AuthContext';
+import { useAppSelector, useAppDispatch } from '@/lib/hooks';
+import { logout } from '@/features/auth/authSlice';
 import { useRouter } from 'next/navigation';
 
 export default function Navbar() {
-  const { user, logout } = useContext(AuthContext);
+  const user = useAppSelector((state) => state.auth.user);
+  const dispatch = useAppDispatch();
   const router = useRouter();
 
-  // Ждём, пока компонент смонтируется на клиенте
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
     setMounted(true);
@@ -38,7 +38,7 @@ export default function Navbar() {
                 Admin
               </Button>
             )}
-            <Button color="inherit" onClick={logout}>
+            <Button color="inherit" onClick={() => dispatch(logout())}>
               Выход
             </Button>
           </Box>

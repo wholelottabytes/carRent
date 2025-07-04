@@ -48,57 +48,80 @@ public class RentalLocationRepository : IRentalLocationRepository
         await UpdateAsync(loc);
     }
 
-    public async Task<(IEnumerable<CarModelSummaryDto> Items, int TotalCount)> SearchCarModelsAsync(CarModelSearchParams searchParams)
-    {
-        var query = _context.Cars
-            .Include(c => c.CarModel)
+  public async Task<(IEnumerable<CarModelSummaryDto> Items, int TotalCount)> SearchCarModelsAsync(CarModelSearchParams searchParams)
+{
+    var query = _context.Cars
+        .Include(c => c.CarModel)
             .ThenInclude(cm => cm.RentalPrices)
-            .Include(c => c.RentalLocation)
-            .Include(c => c.Bookings)
-            .Where(c => !c.IsDeleted && c.IsEnabled);
+        .Include(c => c.RentalLocation)
+        .Include(c => c.Bookings)
+        .Where(c => !c.IsDeleted && c.IsEnabled);
 
-        query = query
-            .WhereIfNotNullOrEmpty(searchParams.Country, c => c.RentalLocation != null && c.RentalLocation.Country == searchParams.Country)
-            .WhereIfNotNullOrEmpty(searchParams.City, c => c.RentalLocation != null && c.RentalLocation.City == searchParams.City);
+    query = query
+        .WhereIfNotNullOrEmpty(searchParams.Country, c => c.RentalLocation != null && c.RentalLocation.Country == searchParams.Country)
+        .WhereIfNotNullOrEmpty(searchParams.City, c => c.RentalLocation != null && c.RentalLocation.City == searchParams.City);
 
-        if (searchParams.StartDate != null && searchParams.EndDate != null)
+    if (searchParams.StartDate != null && searchParams.EndDate != null)
+    {
+        query = query.Where(c =>
+            c.Bookings == null ||
+            !c.Bookings.Any(b => !b.IsDeleted && searchParams.StartDate < b.EndDate && searchParams.EndDate > b.StartDate));
+    }
+
+    // Выполняем запрос в память
+    var groupedInMemory = await query
+        .AsNoTracking()
+        .ToListAsync();
+
+    var groupedModels = groupedInMemory
+        .GroupBy(c => c.CarModel.Id)
+        .Select(g =>
         {
-            query = query.Where(c =>
-                c.Bookings == null ||
-                !c.Bookings.Any(b => !b.IsDeleted && searchParams.StartDate < b.EndDate && searchParams.EndDate > b.StartDate));
-        }
+            var model = g.First().CarModel!;
+            var locations = g
+                .Where(c => c.RentalLocation != null)
+                .Select(c => c.RentalLocation!)
+                .DistinctBy(loc => loc.Id)
+                .Select(loc => new RentalLocationShortDto
+                {
+                    Id = loc.Id,
+                    Name = loc.Name,
+                    City = loc.City,
+                    Address = loc.Address
+                })
+                .ToList();
 
-        // Группируем в памяти
-        var groupedInMemory = await query
-            .AsNoTracking()
-            .ToListAsync();
-
-        var groupedModels = groupedInMemory
-            .GroupBy(c => c.CarModel)
-            .Select(g => new CarModelSummaryDto
+            return new CarModelSummaryDto
             {
-                CarModelId = g.Key!.Id,
-                ModelName = g.Key.ModelName,
-                Make = g.Key.Make,
+                CarModelId = model.Id,
+                ModelName = model.ModelName,
+                Make = model.Make,
+                Year = model.Year,
+                Transmission = model.Transmission.ToString(),
+                SeatingCapacity = model.SeatingCapacity,
+                FuelConsumptionPer100Km = model.FuelConsumptionPer100Km,
                 AvailableCarsCount = g.Count(),
-                RentalPrices = g.Key.RentalPrices
+                RentalPrices = model.RentalPrices
                     .Select(rp => new RentalPriceDto
                     {
                         Id = rp.Id,
                         Price = rp.Price,
                         PriceType = rp.PriceType
-                    }).ToList()
-            })
-            .OrderBy(cm => cm.ModelName)
-            .ToList();
+                    }).ToList(),
+                AvailableAtLocations = locations
+            };
+        })
+        .OrderBy(cm => cm.ModelName)
+        .ToList();
 
-        var totalCount = groupedModels.Count;
+    var totalCount = groupedModels.Count;
 
-        var items = groupedModels
-            .Skip((searchParams.Page - 1) * searchParams.PageSize)
-            .Take(searchParams.PageSize)
-            .ToList();
+    var items = groupedModels
+        .Skip((searchParams.Page - 1) * searchParams.PageSize)
+        .Take(searchParams.PageSize)
+        .ToList();
 
-        return (items, totalCount);
-    }
+    return (items, totalCount);
+}
+
 }

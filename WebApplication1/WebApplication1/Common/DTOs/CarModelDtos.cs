@@ -46,8 +46,23 @@ namespace WebApplication1.Common.DTOs
         public Guid CarModelId { get; set; }
         public string ModelName { get; set; } = "";
         public string Make { get; set; } = "";
+        public int Year { get; set; }
+        public string Transmission { get; set; } = "";
+        public int SeatingCapacity { get; set; }
+        public double FuelConsumptionPer100Km { get; set; }
+
         public int AvailableCarsCount { get; set; }
+
         public List<RentalPriceDto> RentalPrices { get; set; } = new();
+        public List<RentalLocationShortDto> AvailableAtLocations { get; set; } = new();
+    }
+
+    public class RentalLocationShortDto
+    {
+        public Guid Id { get; set; }
+        public string Name { get; set; } = "";
+        public string City { get; set; } = "";
+        public string Address { get; set; } = "";
     }
     public class CarModelSearchParams : PaginationParams
     {

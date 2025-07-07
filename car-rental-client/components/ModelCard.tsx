@@ -1,3 +1,4 @@
+// app/components/ModelCard.tsx
 'use client';
 
 import {
@@ -11,8 +12,9 @@ import {
 } from '@mui/material';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useAppDispatch } from '@/lib/hooks';   
+import { useAppDispatch } from '@/lib/hooks';
 import { setSelectedModel } from '@/features/carModel/carModelSlice';
+
 type Photo = {
   id: string;
   url: string;
@@ -25,13 +27,22 @@ type RentalPriceDto = {
   price: number;
 };
 
-interface RentalLocationDto {
+interface AdditionalServiceDto {
+  id: string;
+  name: string;
+  price: number;
+  rentalLocationId: string;
+}
+
+interface RentalLocationWithServicesDto {
   id: string;
   name: string;
   city: string;
   address: string;
+  additionalServices?: AdditionalServiceDto[];
 }
-type CarModel = {
+
+type CarModelForCard = {
   carModelId: string;
   modelName: string;
   make: string;
@@ -41,8 +52,8 @@ type CarModel = {
   fuelConsumptionPer100Km: number;
   availableCarsCount: number;
   rentalPrices?: RentalPriceDto[];
-  availableAtLocations?: RentalLocationDto[];
-  photos?: Photo[];
+  availableAtLocations?: RentalLocationWithServicesDto[]; 
+  photos?: Photo[]; 
 };
 
 const priceLabels: Record<string, string> = {
@@ -52,9 +63,9 @@ const priceLabels: Record<string, string> = {
   Weekly: 'BYN / от недели',
 };
 
-export default function ModelCard({ model }: { model: CarModel }) {
-  const dispatch = useAppDispatch();        
-  const router = useRouter();              
+export default function ModelCard({ model }: { model: CarModelForCard }) {
+  const dispatch = useAppDispatch();
+  const router = useRouter();
 
   const photoUrl =
     model.photos?.[0]?.url ?? 'https://via.placeholder.com/400x200?text=Нет+фото';
@@ -92,32 +103,17 @@ export default function ModelCard({ model }: { model: CarModel }) {
 
         <Box mt={2}>
           <Button
-  fullWidth
-  onClick={() => {
-    dispatch(setSelectedModel({
-      ...model,
-      year: model.year,
-      transmission: model.transmission,
-      seatingCapacity: model.seatingCapacity,
-      fuelConsumptionPer100Km: model.fuelConsumptionPer100Km,
-      availableAtLocations: model.availableAtLocations,
-      photos: model.photos,
-      rentalPrices: model.rentalPrices?.map(p => ({
-        price: p.price,
-        priceType: p.priceType,
-        id: p.id,
-        carModelId: p.carModelId,
-      })),
-    }));
-    router.push(`/models/${model.carModelId}`);
-  }}
->
-  Подробнее
-</Button>
-
+            fullWidth
+            onClick={() => {
+              const { photos, ...modelWithoutPhotos } = model;
+              dispatch(setSelectedModel(modelWithoutPhotos as any));
+              router.push(`/models/${model.carModelId}`);
+            }}
+          >
+            Подробнее
+          </Button>
         </Box>
       </CardContent>
     </Card>
   );
 }
-

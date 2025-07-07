@@ -18,11 +18,15 @@ import {
 } from '@mui/material';
 import { Delete as DeleteIcon } from '@mui/icons-material';
 import { fetcher } from '@/lib/fetcher';
+import type { CarModel, RentalLocation } from '@/types.ts';
 
 export default function CarsAdminPage() {
-  const [locations, setLocations] = useState<any[]>([]);
-  const [models, setModels] = useState<any[]>([]);
-  const [form, setForm] = useState({ carModelId: '', rentalLocationId: '' });
+  const [locations, setLocations] = useState<RentalLocation[]>([]);
+  const [models, setModels] = useState<CarModel[]>([]);
+  const [form, setForm] = useState({
+    carModelId: '',
+    rentalLocationId: '',
+  });
 
   useEffect(() => {
     loadData();
@@ -31,7 +35,7 @@ export default function CarsAdminPage() {
 
   const loadData = async () => {
     const res = await fetcher('/api/RentalLocation/List');
-    const data = await res.json();
+    const data: RentalLocation[] = await res.json();
     setLocations(data);
   };
 
@@ -60,7 +64,9 @@ export default function CarsAdminPage() {
 
   return (
     <Container>
-      <Typography variant="h5" gutterBottom>Добавить автомобиль</Typography>
+      <Typography variant="h5" gutterBottom>
+        Добавить автомобиль
+      </Typography>
 
       <Box display="flex" gap={2} mb={4}>
         <TextField
@@ -96,7 +102,9 @@ export default function CarsAdminPage() {
         </Button>
       </Box>
 
-      <Typography variant="h6" gutterBottom>Список автомобилей по локациям</Typography>
+      <Typography variant="h6" gutterBottom>
+        Список автомобилей по локациям
+      </Typography>
 
       {locations.map((loc) => (
         <Box key={loc.id} mb={4}>
@@ -114,26 +122,29 @@ export default function CarsAdminPage() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {loc.cars.map((car: any) => (
-                <TableRow key={`${loc.id}-${car.id}`}>
-                  <TableCell>{car.make}</TableCell>
-                  <TableCell>{car.modelName}</TableCell>
-                  <TableCell>
-                    <Checkbox
-                      checked={car.isEnabled}
-                      onChange={() => onToggleEnabled(car.id, car.isEnabled)}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <IconButton onClick={() => onDelete(car.id)}>
-                      <DeleteIcon />
-                    </IconButton>
-                  </TableCell>
-                </TableRow>
-              ))}
-              {loc.cars.length === 0 && (
+              {loc.cars.length > 0 ? (
+                loc.cars.map((car) => (
+                  <TableRow key={car.id}>
+                    <TableCell>{car.make}</TableCell>
+                    <TableCell>{car.modelName}</TableCell>
+                    <TableCell>
+                      <Checkbox
+                        checked={car.isEnabled}
+                        onChange={() => onToggleEnabled(car.id, car.isEnabled)}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <IconButton onClick={() => onDelete(car.id)}>
+                        <DeleteIcon />
+                      </IconButton>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
                 <TableRow>
-                  <TableCell colSpan={4} align="center">Нет машин</TableCell>
+                  <TableCell colSpan={4} align="center">
+                    Нет машин
+                  </TableCell>
                 </TableRow>
               )}
             </TableBody>

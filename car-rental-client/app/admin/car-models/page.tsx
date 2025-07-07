@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import {
   Container,
   Box,
@@ -9,6 +9,7 @@ import {
   MenuItem,
   Typography,
   IconButton,
+  Alert,
 } from '@mui/material';
 import { Add as AddIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import { fetcher } from '@/lib/fetcher';
@@ -27,72 +28,102 @@ export default function CarModelsAdminPage() {
     seatingCapacity: 4,
     fuelConsumptionPer100Km: 0,
   });
+
   const [prices, setPrices] = useState<PriceRow[]>([
     { priceType: 'Hourly', price: 0 },
   ]);
+
   const [files, setFiles] = useState<File[]>([]);
+
+  const [errors, setErrors] = useState<string[]>([]);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const onAddPrice = () =>
     setPrices((prev) => [...prev, { priceType: 'Hourly', price: 0 }]);
+
   const onRemovePrice = (idx: number) =>
     setPrices((prev) => prev.filter((_, i) => i !== idx));
 
-const onSubmit = async () => {
-  let modelId = '';
+  const validate = () => {
+  const errs: string[] = [];
+
+  if (!form.make.trim()) errs.push('Поле "Марка" обязательно');
+  if (!form.modelName.trim()) errs.push('Поле "Модель" обязательно');
+  if (form.year < 1900 || form.year > new Date().getFullYear() + 1)
+    errs.push('Неверный год выпуска');
+  if (!['Automatic', 'Manual', 'CVT', 'Semi-Auto'].includes(form.transmission))
+    errs.push('Выберите корректный тип коробки');
+  if (form.seatingCapacity < 1) errs.push('Количество мест должно быть > 0');
+  if (form.fuelConsumptionPer100Km < 0)
+    errs.push('Расход топлива не может быть отрицательным');
+
+  if (prices.length === 0) errs.push('Добавьте хотя бы одну цену');
+  if (files.length === 0) errs.push('Загрузите хотя бы одно фото');
+
+  prices.forEach((p, i) => {
+    if (p.price <= 0)
+      errs.push(`Цена в строке ${i + 1} должна быть больше нуля`);
+    if (!['Hourly', 'Daily', 'TwoDays', 'Weekly'].includes(p.priceType))
+      errs.push(`Тип цены в строке ${i + 1} некорректен`);
+  });
+
+  setErrors(errs);
+  return errs.length === 0;
+};
+
+  const onSubmit = async () => {
+  setSubmitError(null);
+  if (!validate()) return;
+
+  const dto = {
+    ...form,
+    RentalPrices: prices,
+  };
+
+  const formData = new FormData();
+
+  formData.append('jsonData', JSON.stringify(dto));
+
+  files.forEach((file) => {
+    formData.append('files', file);
+  });
+
   try {
-    const res1 = await fetcher('/api/CarModel/Create', {
+    await fetcher('/api/CarModel/CreateFull', {
       method: 'POST',
-      body: JSON.stringify(form),
-    });
-    const model = await res1.json();
-    modelId = model.id;
-
-    const uploadPromises = files.map((file) => {
-      const fd = new FormData();
-      fd.append('file', file);
-      return fetcher(`/api/CarImage/Upload/${modelId}`, {
-        method: 'POST',
-        body: fd,
-      });
+      body: formData,
     });
 
-    const pricePromises = prices.map((p) =>
-      fetcher('/api/RentalPrice/Create', {
-        method: 'POST',
-        body: JSON.stringify({
-          carModelId: modelId,
-          priceType: p.priceType,
-          price: p.price,
-        }),
-      })
-    );
-
-    await Promise.all([...uploadPromises, ...pricePromises]);
-
+    alert('Модель успешно создана!');
     window.location.reload();
-  } catch (error) {
-    console.error('Ошибка при сохранении модели:', error);
-
-    if (modelId) {
-      try {
-        await fetcher(`/api/CarModel/Delete/${modelId}`, {
-          method: 'DELETE',
-        });
-        console.warn('Созданная модель была удалена из-за ошибки');
-      } catch (delErr) {
-        console.error('Ошибка при удалении модели после сбоя:', delErr);
-      }
-    }
-
-    alert('Ошибка при сохранении модели. Проверьте консоль.');
+  } catch (err: any) {
+    console.error('Ошибка при создании модели:', err);
+    setSubmitError(err.message || 'Произошла ошибка. Проверьте консоль.');
   }
 };
+
 
   return (
     <Container>
       <Typography variant="h5" gutterBottom>
         Добавить модель
       </Typography>
+
+      {errors.length > 0 && (
+        <Box mb={2}>
+          {errors.map((e, i) => (
+            <Alert severity="error" key={i}>
+              {e}
+            </Alert>
+          ))}
+        </Box>
+      )}
+
+      {submitError && (
+        <Box mb={2}>
+          <Alert severity="error">{submitError}</Alert>
+        </Box>
+      )}
 
       <Box
         component="form"
@@ -102,6 +133,11 @@ const onSubmit = async () => {
           gridTemplateColumns: 'repeat(12, 1fr)',
           alignItems: 'start',
         }}
+        noValidate
+        onSubmit={(e) => {
+          e.preventDefault();
+          onSubmit();
+        }}
       >
         <TextField
           label="Марка"
@@ -109,6 +145,8 @@ const onSubmit = async () => {
           value={form.make}
           onChange={(e) => setForm((f) => ({ ...f, make: e.target.value }))}
           sx={{ gridColumn: 'span 6' }}
+          error={errors.some((e) => e.includes('Марка'))}
+          required
         />
 
         <TextField
@@ -119,6 +157,8 @@ const onSubmit = async () => {
             setForm((f) => ({ ...f, modelName: e.target.value }))
           }
           sx={{ gridColumn: 'span 6' }}
+          error={errors.some((e) => e.includes('Модель'))}
+          required
         />
 
         <TextField
@@ -128,6 +168,9 @@ const onSubmit = async () => {
           value={form.year}
           onChange={(e) => setForm((f) => ({ ...f, year: +e.target.value }))}
           sx={{ gridColumn: 'span 4' }}
+          error={errors.some((e) => e.includes('год'))}
+          required
+          inputProps={{ min: 1900, max: new Date().getFullYear() + 1 }}
         />
 
         <TextField
@@ -139,6 +182,8 @@ const onSubmit = async () => {
             setForm((f) => ({ ...f, transmission: e.target.value }))
           }
           sx={{ gridColumn: 'span 4' }}
+          error={errors.some((e) => e.includes('коробки'))}
+          required
         >
           {['Automatic', 'Manual', 'CVT', 'Semi-Auto'].map((v) => (
             <MenuItem key={v} value={v}>
@@ -159,6 +204,9 @@ const onSubmit = async () => {
             }))
           }
           sx={{ gridColumn: 'span 4' }}
+          error={errors.some((e) => e.includes('мест'))}
+          required
+          inputProps={{ min: 1 }}
         />
 
         <TextField
@@ -173,6 +221,9 @@ const onSubmit = async () => {
             }))
           }
           sx={{ gridColumn: 'span 6' }}
+          error={errors.some((e) => e.includes('Расход'))}
+          required
+          inputProps={{ min: 0 }}
         />
 
         <Box sx={{ gridColumn: 'span 6' }}>
@@ -224,6 +275,7 @@ const onSubmit = async () => {
                 );
               }}
               sx={{ gridColumn: 'span 4' }}
+              required
             >
               {['Hourly', 'Daily', 'TwoDays', 'Weekly'].map((v) => (
                 <MenuItem key={v} value={v}>
@@ -245,6 +297,8 @@ const onSubmit = async () => {
                 )
               }
               sx={{ gridColumn: 'span 6' }}
+              required
+              inputProps={{ min: 0 }}
             />
             <IconButton
               onClick={() => onRemovePrice(i)}
@@ -264,7 +318,7 @@ const onSubmit = async () => {
         </Button>
 
         <Box sx={{ gridColumn: 'span 12' }}>
-          <Button variant="contained" onClick={onSubmit} fullWidth>
+          <Button variant="contained" type="submit" fullWidth>
             Сохранить модель
           </Button>
         </Box>

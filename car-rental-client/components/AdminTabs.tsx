@@ -9,9 +9,10 @@ export default function AdminTabs() {
     { label: 'Локации', href: '/admin/locations' },
     { label: 'Модели', href: '/admin/car-models' },
     { label: 'Автомобили', href: '/admin/cars' },
+    { label: 'Доп. Услуги', href: '/admin/additional-services' }, // Новая вкладка
   ];
-    const idx = tabs.findIndex(t => path.startsWith(t.href));
-    const current = idx >= 0 ? idx : 0;
+  const idx = tabs.findIndex(t => path.startsWith(t.href));
+  const current = idx >= 0 ? idx : 0;
   return (
     <Tabs value={current} onChange={(_, i) => router.push(tabs[i].href)}>
       {tabs.map((t, i) => (

@@ -1,9 +1,10 @@
+// app/page.tsx (HomePage)
 'use client';
 
 import { useEffect, useState } from 'react';
 import { Container, Box, Typography } from '@mui/material';
-import ModelCard from '../components/ModelCard';
-import { fetcher } from '../lib/fetcher';
+import ModelCard from '@/components/ModelCard';
+import { fetcher } from '@/lib/fetcher';
 
 type Photo = {
   id: string;
@@ -17,12 +18,21 @@ type RentalPriceDto = {
   price: number;
 };
 
-interface RentalLocationDto {
+interface AdditionalServiceDto {
+  id: string;
+  name: string;
+  price: number;
+  rentalLocationId: string;
+}
+
+interface RentalLocationWithServicesDto {
   id: string;
   name: string;
   city: string;
   address: string;
+  additionalServices?: AdditionalServiceDto[];
 }
+
 type CarModel = {
   carModelId: string;
   modelName: string;
@@ -33,11 +43,12 @@ type CarModel = {
   fuelConsumptionPer100Km: number;
   availableCarsCount: number;
   rentalPrices?: RentalPriceDto[];
-  availableAtLocations?: RentalLocationDto[];
-  photos?: Photo[];
+  availableAtLocations?: RentalLocationWithServicesDto[];
+  photos?: Photo[]; 
 };
+
 export default function HomePage() {
-  const [models, setModels] = useState<CarModel[]>([]);
+  const [models, setModels] = useState<CarModel[]>([] as CarModel[]);
 
   const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL ?? '';
 
@@ -52,16 +63,12 @@ export default function HomePage() {
           return;
         }
 
-        const models: CarModel[] = dataModels.items.map((model: any) => {
-          const hourly = model.rentalPrices?.find((p: any) => p.priceType === 'Hourly');
-          return {
-            ...model,
-            hourlyPrice: hourly?.price ?? undefined,
-          };
-        });
+        const modelsData: CarModel[] = dataModels.items.map((model: any) => ({
+          ...model,
+        }));
 
         const modelsWithPhotos = await Promise.all(
-          models.map(async (model) => {
+          modelsData.map(async (model) => {
             try {
               const resPhotos = await fetcher(`/api/CarImage/GetByCarId/${model.carModelId}`);
               const photos: Photo[] = await resPhotos.json();
@@ -72,7 +79,8 @@ export default function HomePage() {
               }));
 
               return { ...model, photos: photosWithFullUrl };
-            } catch {
+            } catch (photoError) {
+              console.error(`Ошибка при загрузке фото для модели ${model.carModelId}:`, photoError);
               return { ...model, photos: [] };
             }
           })

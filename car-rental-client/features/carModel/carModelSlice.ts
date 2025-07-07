@@ -2,11 +2,19 @@ import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
 type Photo = { id: string; url: string };
 
-interface RentalLocationDto {
+interface AdditionalServiceDto {
+  id: string;
+  name: string;
+  price: number;
+  rentalLocationId: string;
+}
+
+interface RentalLocationWithServicesDto { 
   id: string;
   name: string;
   city: string;
   address: string;
+  additionalServices?: AdditionalServiceDto[]; 
 }
 type RentalPriceDto = {
   id: string;
@@ -24,8 +32,8 @@ interface SelectedCarModel {
   fuelConsumptionPer100Km: number;
   rentalPrices?: RentalPriceDto[];
   availableCarsCount?: number;
-  availableAtLocations?: RentalLocationDto[];
-  photos?: Photo[];
+  availableAtLocations?: RentalLocationWithServicesDto[]; 
+  photos?: Photo[]; 
 }
 
 interface CarModelState {

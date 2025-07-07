@@ -9,4 +9,10 @@ public interface ICarModelRepository
     Task AddAsync(CarModel m);
     Task UpdateAsync(CarModel m);
     Task SoftDeleteAsync(CarModel m);
+
+    Task<CarModel> AddFullModelAsync(
+        CarModel model,
+        List<RentalPrice> prices,
+        List<IFormFile> images,
+        IWebHostEnvironment env);
 }

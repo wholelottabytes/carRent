@@ -14,50 +14,67 @@ public class BookingService : IBookingService
         _carRepository = carRepo;
     }
 
-    public async Task<Booking> CreateBookingAsync(Booking booking, IEnumerable<Guid> additionalServiceIds)
+   public async Task<Booking> CreateBookingAsync(
+        Guid carModelId,
+        Guid rentalLocationId,
+        DateTimeOffset startDate,
+        DateTimeOffset endDate,
+        DateTimeOffset? pickupTime,
+        DateTimeOffset? returnTime,
+        string userId,
+        IEnumerable<Guid> additionalServiceIds)
     {
-        var car = await _carRepository.GetByIdAsync(booking.CarId)
-            ?? throw new EntityNotFoundException(nameof(Car), booking.CarId);
+        var car = await _carRepository.GetSingleAvailableCarAsync(carModelId, rentalLocationId, startDate, endDate);
 
-        if (car.Bookings is not null && car.Bookings.Any(b =>
-            !b.IsDeleted &&
-            booking.StartDate < b.EndDate &&
-            booking.EndDate > b.StartDate))
+        if (car is null)
         {
-            throw new ConflictException("Car is already booked for the selected period.");
+            throw new ConflictException("Нет доступных автомобилей для этой модели в выбранной локации на указанный период.");
         }
 
         var carModel = car.CarModel
-            ?? throw new DomainValidationException("CarModel not loaded");
+            ?? throw new DomainValidationException("CarModel not loaded for the available car.");
 
         var prices = carModel.RentalPrices;
         if (prices is null || !prices.Any())
-            throw new DomainValidationException("No prices found for this car model");
+            throw new DomainValidationException("No prices found for this car model.");
 
-        var durationHours = (booking.EndDate - booking.StartDate).TotalHours;
-        var price = CalculatePrice(prices, durationHours);
+        var durationHours = (endDate - startDate).TotalHours;
+        var basePrice = CalculatePrice(prices, durationHours); 
 
         var rentalLocation = car.RentalLocation
-            ?? throw new DomainValidationException("RentalLocation not loaded");
+            ?? throw new DomainValidationException("RentalLocation not loaded for the available car.");
 
-        var availableServices = rentalLocation.AdditionalServices
-            ?? throw new DomainValidationException("No additional services found");
+        var availableServices = rentalLocation.AdditionalServices;
+        if (availableServices is null) 
+        {
+            availableServices = new List<AdditionalService>(); 
+        }
 
         var services = availableServices
             .Where(s => additionalServiceIds.Contains(s.Id))
             .ToList();
 
-        booking.TotalPrice = price + services.Sum(s => s.Price);
+        var booking = new Booking
+        {
+            CarId = car.Id,
+            RentalLocationId = rentalLocation.Id, 
+            StartDate = startDate,
+            EndDate = endDate,
+            PickupTime = pickupTime,
+            ReturnTime = returnTime,
+            UserId = userId,
+            TotalPrice = basePrice + services.Sum(s => s.Price) 
+        };
 
         booking.BookingServices = services.Select(s => new BookingAdditionalService
         {
-            AdditionalServiceId = s.Id
+            AdditionalServiceId = s.Id,
         }).ToList();
 
         await _bookingRepository.AddAsync(booking);
         return booking;
     }
-
+   
     public async Task<IEnumerable<Booking>> GetUserBookingsAsync(string userId)
     {
         return await _bookingRepository.GetUserBookingsAsync(userId);

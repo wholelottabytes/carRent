@@ -41,5 +41,37 @@ namespace WebApplication1.Data.Repositories
             car.IsDeleted = true;
             await UpdateAsync(car);
         }
+     public async Task<Car?> GetSingleAvailableCarAsync(
+    Guid carModelId,
+    Guid rentalLocationId,
+    DateTimeOffset startDate,
+    DateTimeOffset endDate)
+{
+    
+    startDate = startDate.ToUniversalTime();
+    endDate   = endDate.ToUniversalTime();
+
+    var baseQuery = _context.Cars
+        .AsSplitQuery() 
+        .Include(c => c.CarModel).ThenInclude(m => m!.RentalPrices)
+        .Include(c => c.RentalLocation).ThenInclude(l => l!.AdditionalServices.Where(s => !s.IsDeleted))
+        .Include(c => c.Bookings) 
+        .Where(c =>
+            !c.IsDeleted &&
+            c.IsEnabled &&
+            c.CarModelId == carModelId &&
+            c.RentalLocationId == rentalLocationId &&
+            
+            !c.Bookings.Any(b =>
+                !b.IsDeleted && 
+                startDate < b.EndDate &&
+                endDate > b.StartDate
+            )
+        );
+
+   
+    var carsListForDebug = await baseQuery.ToListAsync();
+    return carsListForDebug.FirstOrDefault();
+}
     }
 }

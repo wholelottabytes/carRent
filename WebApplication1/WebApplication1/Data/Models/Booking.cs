@@ -12,9 +12,9 @@ namespace WebApplication1.Data.Models
 
         // Booking period
         [Required]
-        public DateTime StartDate { get; set; }
+        public DateTimeOffset StartDate { get; set; }
         [Required]
-        public DateTime EndDate { get; set; }
+        public DateTimeOffset EndDate { get; set; }
 
         // Foreign keys
         [Required]
@@ -30,8 +30,8 @@ namespace WebApplication1.Data.Models
         public RentalLocation? RentalLocation { get; set; }
 
         // Key pickup times
-        public DateTime? PickupTime { get; set; }
-        public DateTime? ReturnTime { get; set; }
+        public DateTimeOffset? PickupTime { get; set; }
+        public DateTimeOffset? ReturnTime { get; set; }
         
         
         // Calculated total price

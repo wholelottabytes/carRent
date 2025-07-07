@@ -13,5 +13,7 @@ namespace WebApplication1.Data.Repositories
         Task AddAsync(Car car);
         Task UpdateAsync(Car car);
         Task SoftDeleteAsync(Car car);
+        Task<Car?> GetSingleAvailableCarAsync(Guid carModelId, Guid rentalLocationId, DateTimeOffset startDate, DateTimeOffset endDate);
+
     }
 }

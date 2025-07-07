@@ -1,4 +1,6 @@
 using Microsoft.EntityFrameworkCore;
+using WebApplication1.Common.DTOs;
+using WebApplication1.Common.Exceptions;
 using WebApplication1.Data.Context;
 using WebApplication1.Data.Models;
 using WebApplication1.Data.Repositories;
@@ -41,4 +43,57 @@ public class CarModelRepository : ICarModelRepository
         m.IsDeleted = true;
         await UpdateAsync(m);
     }
+    public async Task<CarModel> AddFullModelAsync(
+        CarModel model,
+        List<RentalPrice> prices,
+        List<IFormFile> images,
+        IWebHostEnvironment env)
+    {
+        using var transaction = await _context.Database.BeginTransactionAsync();
+
+        try
+        {
+            _context.CarModels.Add(model);
+            await _context.SaveChangesAsync();
+
+            foreach (var price in prices)
+            {
+                price.CarModelId = model.Id;
+                _context.RentalPrices.Add(price);
+            }
+
+            if (!Directory.Exists(Path.Combine(env.WebRootPath, "uploads")))
+                Directory.CreateDirectory(Path.Combine(env.WebRootPath, "uploads"));
+
+            foreach (var file in images)
+            {
+                var ext = Path.GetExtension(file.FileName).ToLower();
+                if (!new[] { ".jpg", ".jpeg", ".png" }.Contains(ext))
+                    throw new Exception("Invalid image format");
+
+                var filename = Guid.NewGuid() + ext;
+                var fullPath = Path.Combine(env.WebRootPath, "uploads", filename);
+
+                await using var stream = new FileStream(fullPath, FileMode.Create);
+                await file.CopyToAsync(stream);
+
+                _context.CarImages.Add(new CarImage
+                {
+                    CarModelId = model.Id,
+                    Url = "/uploads/" + filename
+                });
+            }
+
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+
+            return model;
+        }
+        catch
+        {
+            await transaction.RollbackAsync();
+            throw;
+        }
+    }
+
 }

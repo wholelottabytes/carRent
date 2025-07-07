@@ -44,17 +44,15 @@ namespace WebApplication1.Common.DTOs
     public class CarModelSummaryDto
     {
         public Guid CarModelId { get; set; }
-        public string ModelName { get; set; } = "";
-        public string Make { get; set; } = "";
+        public string ModelName { get; set; } = string.Empty;
+        public string Make { get; set; } = string.Empty;
         public int Year { get; set; }
-        public string Transmission { get; set; } = "";
+        public string Transmission { get; set; } = string.Empty;
         public int SeatingCapacity { get; set; }
         public double FuelConsumptionPer100Km { get; set; }
-
         public int AvailableCarsCount { get; set; }
-
-        public List<RentalPriceDto> RentalPrices { get; set; } = new();
-        public List<RentalLocationShortDto> AvailableAtLocations { get; set; } = new();
+        public List<RentalPriceDto>? RentalPrices { get; set; }
+        public List<RentalLocationWithServicesDto>? AvailableAtLocations { get; set; } 
     }
 
     public class RentalLocationShortDto
@@ -71,4 +69,29 @@ namespace WebApplication1.Common.DTOs
         public DateTime? StartDate { get; set; }
         public DateTime? EndDate { get; set; }
     }
+    public class CreateFullCarModelDto
+    {
+        [Required]
+        public string Make { get; set; }
+
+        [Required]
+        public string ModelName { get; set; }
+
+        [Range(1900, 2100)]
+        public int Year { get; set; }
+
+        [Required]
+        public TransmissionType Transmission { get; set; }
+
+        [Range(1, 20)]
+        public int SeatingCapacity { get; set; }
+
+        [Range(0, double.MaxValue)]
+        public double FuelConsumptionPer100Km { get; set; }
+
+        [Required]
+        public List<RentalPriceDto> RentalPrices { get; set; }
+    }
+
+    
 }

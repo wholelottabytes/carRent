@@ -77,6 +77,9 @@ builder.Services.AddScoped<IRentalPriceService, RentalPriceService>();
 
 builder.Services.AddScoped<IAdditionalServiceRepository, AdditionalServiceRepository>();
 builder.Services.AddScoped<IAdditionalServiceService, AdditionalServiceService>();
+
+builder.Services.AddScoped<IBookingRepository, BookingRepository>();
+builder.Services.AddScoped<IBookingService, BookingService>();
 builder.Services.AddControllers();
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
@@ -86,6 +89,7 @@ builder.Services.AddControllers()
 var app = builder.Build();
 
 await app.Services.SeedIdentityAsync();
+app.UseCors("AllowFrontend");
 app.UseStaticFiles();
 app.UseExceptionHandler(errorApp =>
 {
@@ -116,7 +120,6 @@ app.UseExceptionHandler(errorApp =>
         await context.Response.WriteAsJsonAsync(problemDetails);
     });
 });
-app.UseCors("AllowFrontend");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

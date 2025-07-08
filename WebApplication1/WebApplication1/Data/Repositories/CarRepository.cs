@@ -41,6 +41,19 @@ namespace WebApplication1.Data.Repositories
             car.IsDeleted = true;
             await UpdateAsync(car);
         }
+        
+        public async Task<List<Car>> GetCarsByModelAndLocationAsync(Guid modelId, Guid locationId)
+        {
+            return await _context.Cars
+                .Where(c =>
+                    c.CarModelId == modelId &&
+                    c.RentalLocationId == locationId &&
+                    !c.IsDeleted &&
+                    c.IsEnabled)
+                .Include(c => c.Bookings.Where(b => !b.IsDeleted))
+                .ToListAsync();
+        }
+        
      public async Task<Car?> GetSingleAvailableCarAsync(
     Guid carModelId,
     Guid rentalLocationId,

@@ -1,4 +1,5 @@
 using WebApplication1.Business.Services;
+using WebApplication1.Common.DTOs;
 using WebApplication1.Common.Exceptions;
 using WebApplication1.Data.Models;
 using WebApplication1.Data.Repositories;
@@ -28,7 +29,7 @@ public class BookingService : IBookingService
 
         if (car is null)
         {
-            throw new ConflictException("Нет доступных автомобилей для этой модели в выбранной локации на указанный период.");
+            throw new DomainValidationException("There is not available cars for this period");
         }
 
         var carModel = car.CarModel
@@ -74,7 +75,20 @@ public class BookingService : IBookingService
         await _bookingRepository.AddAsync(booking);
         return booking;
     }
-   
+    public async Task<IEnumerable<BookingViewDto>> GetUserBookingViewsAsync(string userId)
+    {
+        var bookings = await _bookingRepository.GetUserBookingsAsync(userId);
+
+        return bookings.Select(b => new BookingViewDto
+        {
+            Id = b.Id,
+            CarModel = $"{b.Car!.CarModel!.Make} {b.Car.CarModel.ModelName}",
+            RentalLocation = $"{b.RentalLocation!.City}, {b.RentalLocation.Name}",
+            StartDate = b.StartDate,
+            EndDate = b.EndDate,
+            TotalPrice = b.TotalPrice
+        });
+    }
     public async Task<IEnumerable<Booking>> GetUserBookingsAsync(string userId)
     {
         return await _bookingRepository.GetUserBookingsAsync(userId);
@@ -83,32 +97,133 @@ public class BookingService : IBookingService
     public async Task DeleteAsync(Guid id)
     {
         var booking = await _bookingRepository.GetByIdAsync(id)
-            ?? throw new EntityNotFoundException(nameof(Booking), id);
+                      ?? throw new EntityNotFoundException(nameof(Booking), id);
+
+        if (booking.StartDate <= DateTimeOffset.UtcNow)
+            throw new DomainValidationException("Нельзя отменить бронирование, которое уже началось или прошло.");
 
         await _bookingRepository.SoftDeleteAsync(booking);
     }
 
     private static decimal CalculatePrice(IEnumerable<RentalPrice> prices, double totalHours)
     {
-        var interval = GetIntervalForDuration(totalHours);
+        var orderedPriceTypes = GetFallbackPriceTypes(totalHours);
 
-        var price = prices.FirstOrDefault(p => p.PriceType == interval.PriceType)
-                    ?? throw new DomainValidationException($"{interval.PriceType} price not found");
+        foreach (var priceType in orderedPriceTypes)
+        {
+            var price = prices.FirstOrDefault(p => p.PriceType == priceType);
+            if (price != null)
+            {
+                return (decimal)totalHours * price.Price;
+            }
+        }
 
-        return (decimal)totalHours * price.Price;
+        throw new DomainValidationException("Не найдена подходящая ставка аренды для заданной длительности.");
     }
 
-    private static RentalInterval GetIntervalForDuration(double hours)
+    private static List<PriceType> GetFallbackPriceTypes(double totalHours)
     {
-        if (hours < RentalInterval.Daily.HourEquivalent)
-            return RentalInterval.Hourly;
+        if (totalHours >= RentalInterval.Weekly.HourEquivalent)
+        {
+            return new List<PriceType> { PriceType.Weekly, PriceType.TwoDays, PriceType.Daily, PriceType.Hourly };
+        }
 
-        if (hours < RentalInterval.TwoDays.HourEquivalent)
-            return RentalInterval.Daily;
+        if (totalHours >= RentalInterval.TwoDays.HourEquivalent)
+        {
+            return new List<PriceType> { PriceType.TwoDays, PriceType.Daily, PriceType.Hourly };
+        }
 
-        if (hours < RentalInterval.Weekly.HourEquivalent)
-            return RentalInterval.TwoDays;
+        if (totalHours >= RentalInterval.Daily.HourEquivalent)
+        {
+            return new List<PriceType> { PriceType.Daily, PriceType.Hourly };
+        }
 
-        return RentalInterval.Weekly;
+        return new List<PriceType> { PriceType.Hourly };
     }
+
+public async Task<List<(DateTimeOffset Start, DateTimeOffset End)>> GetBookedTimeIntervalsAsync(Guid carModelId, Guid locationId)
+{
+    var cars = await _carRepository.GetCarsByModelAndLocationAsync(carModelId, locationId);
+    if (cars is null || cars.Count == 0) return new();
+
+    var allCarsIntervals = new List<List<(DateTimeOffset Start, DateTimeOffset End)>>();
+
+    foreach (var car in cars)
+    {
+        var intervals = car.Bookings
+            .Where(b => !b.IsDeleted)
+            .Select(b => (b.StartDate, b.EndDate))
+            .OrderBy(( (DateTimeOffset Start, DateTimeOffset End) b ) => b.Start)
+            .ToList();
+
+        var merged = MergeIntervals(intervals);
+        allCarsIntervals.Add(merged);
+    }
+
+    if (allCarsIntervals.Count == 0)
+        return new();
+
+    var intersection = allCarsIntervals[0];
+
+    for (int i = 1; i < allCarsIntervals.Count; i++)
+    {
+        intersection = IntersectIntervals(intersection, allCarsIntervals[i]);
+        if (intersection.Count == 0) 
+            break;
+    }
+
+    return intersection;
+}
+
+private List<(DateTimeOffset Start, DateTimeOffset End)> MergeIntervals(List<(DateTimeOffset Start, DateTimeOffset End)> intervals)
+{
+    if (intervals.Count == 0) return intervals;
+
+    var merged = new List<(DateTimeOffset Start, DateTimeOffset End)>();
+    var current = intervals[0];
+
+    for (int i = 1; i < intervals.Count; i++)
+    {
+        var next = intervals[i];
+        if (next.Start <= current.End) 
+        {
+            current.End = next.End > current.End ? next.End : current.End;
+        }
+        else
+        {
+            merged.Add(current);
+            current = next;
+        }
+    }
+    merged.Add(current);
+    return merged;
+}
+
+private List<(DateTimeOffset Start, DateTimeOffset End)> IntersectIntervals(
+    List<(DateTimeOffset Start, DateTimeOffset End)> list1,
+    List<(DateTimeOffset Start, DateTimeOffset End)> list2)
+{
+    var result = new List<(DateTimeOffset Start, DateTimeOffset End)>();
+    int i = 0, j = 0;
+
+    while (i < list1.Count && j < list2.Count)
+    {
+        var a = list1[i];
+        var b = list2[j];
+
+        var start = a.Start > b.Start ? a.Start : b.Start;
+        var end = a.End < b.End ? a.End : b.End;
+
+        if (start < end)
+            result.Add((start, end));
+
+        if (a.End < b.End)
+            i++;
+        else
+            j++;
+    }
+
+    return result;
+}
+
 }

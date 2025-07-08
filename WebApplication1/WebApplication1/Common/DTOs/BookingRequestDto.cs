@@ -22,3 +22,12 @@ public class BookingRequestDto
     public DateTimeOffset? ReturnTime { get; set; }
     public List<Guid>? AdditionalServiceIds { get; set; }
 }
+public class BookingViewDto
+{
+    public Guid Id { get; set; }
+    public string CarModel { get; set; } = string.Empty;
+    public string RentalLocation { get; set; } = string.Empty;
+    public DateTimeOffset StartDate { get; set; }
+    public DateTimeOffset EndDate { get; set; }
+    public decimal TotalPrice { get; set; }
+}

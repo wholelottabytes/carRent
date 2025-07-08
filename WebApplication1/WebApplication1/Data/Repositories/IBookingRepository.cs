@@ -8,4 +8,6 @@ public interface IBookingRepository
     Task<Booking?> GetByIdAsync(Guid id);
     Task<IEnumerable<Booking>> GetUserBookingsAsync(string userId);
     Task SoftDeleteAsync(Booking booking);
+
+
 }

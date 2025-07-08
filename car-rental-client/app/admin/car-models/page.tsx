@@ -14,17 +14,35 @@ import {
 import { Add as AddIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import { fetcher } from '@/lib/fetcher';
 
+const transmissionOptions = ['Automatic', 'Manual', 'CVT', 'Semi-Auto'] as const;
+const priceTypes = ['Hourly', 'Daily', 'TwoDays', 'Weekly'] as const;
+
+type Transmission = typeof transmissionOptions[number];
+type PriceType = typeof priceTypes[number];
+
 type PriceRow = {
-  priceType: 'Hourly' | 'Daily' | 'TwoDays' | 'Weekly';
+  priceType: PriceType;
   price: number;
 };
+
+type FormErrorKeys =
+  | 'make'
+  | 'modelName'
+  | 'year'
+  | 'transmission'
+  | 'seatingCapacity'
+  | 'fuelConsumptionPer100Km'
+  | 'prices'
+  | 'files';
+
+type FormErrors = Record<FormErrorKeys, string | null>;
 
 export default function CarModelsAdminPage() {
   const [form, setForm] = useState({
     make: '',
     modelName: '',
     year: new Date().getFullYear(),
-    transmission: 'Automatic',
+    transmission: 'Automatic' as Transmission,
     seatingCapacity: 4,
     fuelConsumptionPer100Km: 0,
   });
@@ -34,8 +52,16 @@ export default function CarModelsAdminPage() {
   ]);
 
   const [files, setFiles] = useState<File[]>([]);
-
-  const [errors, setErrors] = useState<string[]>([]);
+  const [errors, setErrors] = useState<FormErrors>({
+    make: null,
+    modelName: null,
+    year: null,
+    transmission: null,
+    seatingCapacity: null,
+    fuelConsumptionPer100Km: null,
+    prices: null,
+    files: null,
+  });
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   const onAddPrice = () =>
@@ -45,63 +71,96 @@ export default function CarModelsAdminPage() {
     setPrices((prev) => prev.filter((_, i) => i !== idx));
 
   const validate = () => {
-  const errs: string[] = [];
+    const newErrors: FormErrors = {
+      make: null,
+      modelName: null,
+      year: null,
+      transmission: null,
+      seatingCapacity: null,
+      fuelConsumptionPer100Km: null,
+      prices: null,
+      files: null,
+    };
 
-  if (!form.make.trim()) errs.push('Поле "Марка" обязательно');
-  if (!form.modelName.trim()) errs.push('Поле "Модель" обязательно');
-  if (form.year < 1900 || form.year > new Date().getFullYear() + 1)
-    errs.push('Неверный год выпуска');
-  if (!['Automatic', 'Manual', 'CVT', 'Semi-Auto'].includes(form.transmission))
-    errs.push('Выберите корректный тип коробки');
-  if (form.seatingCapacity < 1) errs.push('Количество мест должно быть > 0');
-  if (form.fuelConsumptionPer100Km < 0)
-    errs.push('Расход топлива не может быть отрицательным');
+    let isValid = true;
 
-  if (prices.length === 0) errs.push('Добавьте хотя бы одну цену');
-  if (files.length === 0) errs.push('Загрузите хотя бы одно фото');
+    if (!form.make.trim()) {
+      newErrors.make = 'Поле "Марка" обязательно';
+      isValid = false;
+    }
+    if (!form.modelName.trim()) {
+      newErrors.modelName = 'Поле "Модель" обязательно';
+      isValid = false;
+    }
+    if (form.year < 1900 || form.year > new Date().getFullYear() + 1) {
+      newErrors.year = 'Неверный год выпуска';
+      isValid = false;
+    }
+    if (!transmissionOptions.includes(form.transmission)) {
+      newErrors.transmission = 'Выберите корректный тип коробки';
+      isValid = false;
+    }
+    if (form.seatingCapacity < 1) {
+      newErrors.seatingCapacity = 'Количество мест должно быть больше 0';
+      isValid = false;
+    }
+    if (form.fuelConsumptionPer100Km < 0) {
+      newErrors.fuelConsumptionPer100Km = 'Расход топлива не может быть отрицательным';
+      isValid = false;
+    }
 
-  prices.forEach((p, i) => {
-    if (p.price <= 0)
-      errs.push(`Цена в строке ${i + 1} должна быть больше нуля`);
-    if (!['Hourly', 'Daily', 'TwoDays', 'Weekly'].includes(p.priceType))
-      errs.push(`Тип цены в строке ${i + 1} некорректен`);
-  });
+    if (prices.length === 0) {
+      newErrors.prices = 'Добавьте хотя бы одну цену';
+      isValid = false;
+    } else {
+      for (let i = 0; i < prices.length; i++) {
+        if (prices[i].price <= 0) {
+          newErrors.prices = `Цена в строке ${i + 1} должна быть больше нуля`;
+          isValid = false;
+          break;
+        }
+        if (!priceTypes.includes(prices[i].priceType)) {
+          newErrors.prices = `Тип цены в строке ${i + 1} некорректен`;
+          isValid = false;
+          break;
+        }
+      }
+    }
 
-  setErrors(errs);
-  return errs.length === 0;
-};
+    if (files.length === 0) {
+      newErrors.files = 'Загрузите хотя бы одно фото';
+      isValid = false;
+    }
 
-  const onSubmit = async () => {
-  setSubmitError(null);
-  if (!validate()) return;
-
-  const dto = {
-    ...form,
-    RentalPrices: prices,
+    setErrors(newErrors);
+    return isValid;
   };
 
-  const formData = new FormData();
+  const onSubmit = async () => {
+    setSubmitError(null);
+    if (!validate()) return;
 
-  formData.append('jsonData', JSON.stringify(dto));
+    const dto = {
+      ...form,
+      RentalPrices: prices,
+    };
 
-  files.forEach((file) => {
-    formData.append('files', file);
-  });
+    const formData = new FormData();
+    formData.append('jsonData', JSON.stringify(dto));
+    files.forEach((file) => formData.append('files', file));
 
-  try {
-    await fetcher('/api/CarModel/CreateFull', {
-      method: 'POST',
-      body: formData,
-    });
-
-    alert('Модель успешно создана!');
-    window.location.reload();
-  } catch (err: any) {
-    console.error('Ошибка при создании модели:', err);
-    setSubmitError(err.message || 'Произошла ошибка. Проверьте консоль.');
-  }
-};
-
+    try {
+      await fetcher('/api/CarModel/CreateFull', {
+        method: 'POST',
+        body: formData,
+      });
+      alert('Модель успешно создана!');
+      window.location.reload();
+    } catch (err: any) {
+      console.error('Ошибка при создании модели:', err);
+      setSubmitError(err.message || 'Произошла неизвестная ошибка, попробуйте позже');
+    }
+  };
 
   return (
     <Container>
@@ -109,13 +168,11 @@ export default function CarModelsAdminPage() {
         Добавить модель
       </Typography>
 
-      {errors.length > 0 && (
+      {Object.values(errors).some((e) => e) && (
         <Box mb={2}>
-          {errors.map((e, i) => (
-            <Alert severity="error" key={i}>
-              {e}
-            </Alert>
-          ))}
+          {Object.values(errors).map(
+            (e, i) => e && <Alert severity="error" key={i}>{e}</Alert>
+          )}
         </Box>
       )}
 
@@ -145,7 +202,8 @@ export default function CarModelsAdminPage() {
           value={form.make}
           onChange={(e) => setForm((f) => ({ ...f, make: e.target.value }))}
           sx={{ gridColumn: 'span 6' }}
-          error={errors.some((e) => e.includes('Марка'))}
+          error={!!errors.make}
+          helperText={errors.make}
           required
         />
 
@@ -153,11 +211,10 @@ export default function CarModelsAdminPage() {
           label="Модель"
           fullWidth
           value={form.modelName}
-          onChange={(e) =>
-            setForm((f) => ({ ...f, modelName: e.target.value }))
-          }
+          onChange={(e) => setForm((f) => ({ ...f, modelName: e.target.value }))}
           sx={{ gridColumn: 'span 6' }}
-          error={errors.some((e) => e.includes('Модель'))}
+          error={!!errors.modelName}
+          helperText={errors.modelName}
           required
         />
 
@@ -168,7 +225,8 @@ export default function CarModelsAdminPage() {
           value={form.year}
           onChange={(e) => setForm((f) => ({ ...f, year: +e.target.value }))}
           sx={{ gridColumn: 'span 4' }}
-          error={errors.some((e) => e.includes('год'))}
+          error={!!errors.year}
+          helperText={errors.year}
           required
           inputProps={{ min: 1900, max: new Date().getFullYear() + 1 }}
         />
@@ -178,14 +236,13 @@ export default function CarModelsAdminPage() {
           label="Коробка"
           fullWidth
           value={form.transmission}
-          onChange={(e) =>
-            setForm((f) => ({ ...f, transmission: e.target.value }))
-          }
+          onChange={(e) => setForm((f) => ({ ...f, transmission: e.target.value as Transmission }))}
           sx={{ gridColumn: 'span 4' }}
-          error={errors.some((e) => e.includes('коробки'))}
+          error={!!errors.transmission}
+          helperText={errors.transmission}
           required
         >
-          {['Automatic', 'Manual', 'CVT', 'Semi-Auto'].map((v) => (
+          {transmissionOptions.map((v) => (
             <MenuItem key={v} value={v}>
               {v}
             </MenuItem>
@@ -197,14 +254,10 @@ export default function CarModelsAdminPage() {
           type="number"
           fullWidth
           value={form.seatingCapacity}
-          onChange={(e) =>
-            setForm((f) => ({
-              ...f,
-              seatingCapacity: +e.target.value,
-            }))
-          }
+          onChange={(e) => setForm((f) => ({ ...f, seatingCapacity: +e.target.value }))}
           sx={{ gridColumn: 'span 4' }}
-          error={errors.some((e) => e.includes('мест'))}
+          error={!!errors.seatingCapacity}
+          helperText={errors.seatingCapacity}
           required
           inputProps={{ min: 1 }}
         />
@@ -214,14 +267,10 @@ export default function CarModelsAdminPage() {
           type="number"
           fullWidth
           value={form.fuelConsumptionPer100Km}
-          onChange={(e) =>
-            setForm((f) => ({
-              ...f,
-              fuelConsumptionPer100Km: +e.target.value,
-            }))
-          }
+          onChange={(e) => setForm((f) => ({ ...f, fuelConsumptionPer100Km: +e.target.value }))}
           sx={{ gridColumn: 'span 6' }}
-          error={errors.some((e) => e.includes('Расход'))}
+          error={!!errors.fuelConsumptionPer100Km}
+          helperText={errors.fuelConsumptionPer100Km}
           required
           inputProps={{ min: 0 }}
         />
@@ -234,11 +283,10 @@ export default function CarModelsAdminPage() {
               multiple
               type="file"
               accept="image/*"
-              onChange={(e) =>
-                e.target.files && setFiles(Array.from(e.target.files))
-              }
+              onChange={(e) => e.target.files && setFiles(Array.from(e.target.files))}
             />
           </Button>
+          {errors.files && <Typography color="error">{errors.files}</Typography>}
           <Box mt={1}>
             {files.map((f) => (
               <Typography key={f.name}>{f.name}</Typography>
@@ -267,7 +315,7 @@ export default function CarModelsAdminPage() {
               fullWidth
               value={p.priceType}
               onChange={(e) => {
-                const newType = e.target.value as PriceRow['priceType'];
+                const newType = e.target.value as PriceType;
                 setPrices((prev) =>
                   prev.map((row, idx) =>
                     idx === i ? { ...row, priceType: newType } : row
@@ -277,7 +325,7 @@ export default function CarModelsAdminPage() {
               sx={{ gridColumn: 'span 4' }}
               required
             >
-              {['Hourly', 'Daily', 'TwoDays', 'Weekly'].map((v) => (
+              {priceTypes.map((v) => (
                 <MenuItem key={v} value={v}>
                   {v}
                 </MenuItem>
@@ -300,6 +348,7 @@ export default function CarModelsAdminPage() {
               required
               inputProps={{ min: 0 }}
             />
+
             <IconButton
               onClick={() => onRemovePrice(i)}
               sx={{ gridColumn: 'span 2' }}
@@ -308,6 +357,12 @@ export default function CarModelsAdminPage() {
             </IconButton>
           </Box>
         ))}
+
+        {errors.prices && (
+          <Typography color="error" sx={{ gridColumn: 'span 12' }}>
+            {errors.prices}
+          </Typography>
+        )}
 
         <Button
           startIcon={<AddIcon />}

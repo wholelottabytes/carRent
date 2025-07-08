@@ -103,14 +103,12 @@ export default function AdditionalServicesAdminPage() {
       if (isEditing) {
         await fetcher(`/api/AdditionalService/Update/${currentServiceForm.id}`, {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(currentServiceForm),
         });
         alert('Услуга успешно обновлена!');
       } else {
         await fetcher('/api/AdditionalService/Create', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(currentServiceForm),
         });
         alert('Услуга успешно создана!');

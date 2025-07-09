@@ -30,6 +30,19 @@ public class RentalLocationService : IRentalLocationService
     public async Task<RentalLocation> GetByIdAsync(Guid id)
         => await _rentalLocationRepository.GetByIdAsync(id)
            ?? throw new EntityNotFoundException(nameof(RentalLocation), id);
+    public async Task<IEnumerable<RentalLocationSimpleDto>> ListSimpleAsync()
+    {
+        var locations = await _rentalLocationRepository.ListAsync();
+
+        return locations.Select(loc => new RentalLocationSimpleDto
+        {
+            Id = loc.Id,
+            Country = loc.Country,
+            City = loc.City,
+            Name = loc.Name,
+            Address = loc.Address
+        });
+    }
 
   
     public async Task UpdateAsync(Guid id, UpdateRentalLocationDto dto)
@@ -55,6 +68,12 @@ public class RentalLocationService : IRentalLocationService
 
     public async Task<PagedResult<CarModelSummaryDto>> SearchCarModelsPagedAsync(CarModelSearchParams searchParams)
     {
+        if (searchParams.StartDate.HasValue)
+            searchParams.StartDate = searchParams.StartDate.Value.ToUniversalTime();
+
+        if (searchParams.EndDate.HasValue)
+            searchParams.EndDate = searchParams.EndDate.Value.ToUniversalTime();
+
         var (items, totalCount) = await _rentalLocationRepository.SearchCarModelsAsync(searchParams);
         return new PagedResult<CarModelSummaryDto>
         {

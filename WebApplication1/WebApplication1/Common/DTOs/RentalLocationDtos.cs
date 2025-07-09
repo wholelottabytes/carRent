@@ -27,4 +27,14 @@ namespace WebApplication1.Common.DTOs
         public string Address { get; set; } = string.Empty;
         public List<AdditionalServiceDto> AdditionalServices { get; set; } = new List<AdditionalServiceDto>();
     }
+    public class RentalLocationSimpleDto
+    {
+        public Guid Id { get; set; }
+        public string Country { get; set; } = null!;
+        public string City { get; set; } = null!;
+        public string Name { get; set; } = null!;
+        
+        public string Address { get; set; } = null!;
+    }
+
 }

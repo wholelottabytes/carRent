@@ -11,10 +11,14 @@ export default function Navbar() {
   const dispatch = useAppDispatch();
   const router = useRouter();
 
+  const [hydratedUser, setHydratedUser] = useState<typeof user | null>(null);
   const [mounted, setMounted] = useState(false);
+
   useEffect(() => {
     setMounted(true);
-  }, []);
+    setHydratedUser(user);
+  }, [user]);
+
   if (!mounted) return null;
 
   return (
@@ -28,12 +32,12 @@ export default function Navbar() {
           CarRentApp
         </Typography>
 
-        {user ? (
+        {hydratedUser ? (
           <Box>
             <Button color="inherit" onClick={() => router.push('/profile')}>
-              {user.email}
+              {hydratedUser.email}
             </Button>
-            {Array.isArray(user.roles) && user.roles.includes('Admin') && (
+            {Array.isArray(hydratedUser.roles) && hydratedUser.roles.includes('Admin') && (
               <Button color="inherit" onClick={() => router.push('/admin')}>
                 Admin
               </Button>

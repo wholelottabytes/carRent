@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Caching.Memory;
 using WebApplication1.Business.Services;
 using WebApplication1.Common.DTOs;
 using WebApplication1.Common.Exceptions;
@@ -8,14 +9,19 @@ public class BookingService : IBookingService
 {
     private readonly IBookingRepository _bookingRepository;
     private readonly ICarRepository _carRepository;
+    private readonly IMemoryCache _cache;
 
-    public BookingService(IBookingRepository repo, ICarRepository carRepo)
+    public BookingService(
+        IBookingRepository repo,
+        ICarRepository carRepo,
+        IMemoryCache cache)
     {
         _bookingRepository = repo;
         _carRepository = carRepo;
+        _cache = cache;
     }
 
-   public async Task<Booking> CreateBookingAsync(
+    public async Task<Booking> CreateBookingAsync(
         Guid carModelId,
         Guid rentalLocationId,
         DateTimeOffset startDate,
@@ -40,16 +46,12 @@ public class BookingService : IBookingService
             throw new DomainValidationException("No prices found for this car model.");
 
         var durationHours = (endDate - startDate).TotalHours;
-        var basePrice = CalculatePrice(prices, durationHours); 
+        var basePrice = CalculatePrice(prices, durationHours);
 
         var rentalLocation = car.RentalLocation
             ?? throw new DomainValidationException("RentalLocation not loaded for the available car.");
 
-        var availableServices = rentalLocation.AdditionalServices;
-        if (availableServices is null) 
-        {
-            availableServices = new List<AdditionalService>(); 
-        }
+        var availableServices = rentalLocation.AdditionalServices ?? new List<AdditionalService>();
 
         var services = availableServices
             .Where(s => additionalServiceIds.Contains(s.Id))
@@ -58,13 +60,13 @@ public class BookingService : IBookingService
         var booking = new Booking
         {
             CarId = car.Id,
-            RentalLocationId = rentalLocation.Id, 
+            RentalLocationId = rentalLocation.Id,
             StartDate = startDate,
             EndDate = endDate,
             PickupTime = pickupTime,
             ReturnTime = returnTime,
             UserId = userId,
-            TotalPrice = basePrice + services.Sum(s => s.Price) 
+            TotalPrice = basePrice + services.Sum(s => s.Price)
         };
 
         booking.BookingServices = services.Select(s => new BookingAdditionalService
@@ -73,8 +75,17 @@ public class BookingService : IBookingService
         }).ToList();
 
         await _bookingRepository.AddAsync(booking);
+
+        InvalidateBookedIntervalsCache(carModelId, rentalLocationId);
+
         return booking;
     }
+
+    public async Task<IEnumerable<Booking>> GetUserBookingsAsync(string userId)
+    {
+        return await _bookingRepository.GetUserBookingsAsync(userId);
+    }
+
     public async Task<IEnumerable<BookingViewDto>> GetUserBookingViewsAsync(string userId)
     {
         var bookings = await _bookingRepository.GetUserBookingsAsync(userId);
@@ -89,20 +100,62 @@ public class BookingService : IBookingService
             TotalPrice = b.TotalPrice
         });
     }
-    public async Task<IEnumerable<Booking>> GetUserBookingsAsync(string userId)
-    {
-        return await _bookingRepository.GetUserBookingsAsync(userId);
-    }
 
     public async Task DeleteAsync(Guid id)
     {
         var booking = await _bookingRepository.GetByIdAsync(id)
-                      ?? throw new EntityNotFoundException(nameof(Booking), id);
-
-        if (booking.StartDate <= DateTimeOffset.UtcNow)
-            throw new DomainValidationException("Нельзя отменить бронирование, которое уже началось или прошло.");
+            ?? throw new EntityNotFoundException(nameof(Booking), id);
 
         await _bookingRepository.SoftDeleteAsync(booking);
+
+        InvalidateBookedIntervalsCache(booking.Car!.CarModelId, booking.RentalLocationId);
+    }
+
+    public async Task<List<(DateTimeOffset Start, DateTimeOffset End)>> GetBookedTimeIntervalsAsync(Guid carModelId, Guid locationId)
+    {
+        var cacheKey = $"booked_intervals_{carModelId}_{locationId}";
+
+        if (_cache.TryGetValue(cacheKey, out List<(DateTimeOffset Start, DateTimeOffset End)> cached))
+            return cached;
+
+        var cars = await _carRepository.GetCarsByModelAndLocationAsync(carModelId, locationId);
+        if (cars is null || cars.Count == 0) return new();
+
+        var allCarsIntervals = new List<List<(DateTimeOffset Start, DateTimeOffset End)>>();
+
+        foreach (var car in cars)
+        {
+            var intervals = car.Bookings
+                .Where(b => !b.IsDeleted)
+                .Select(b => (b.StartDate, b.EndDate))
+                .OrderBy(( (DateTimeOffset Start, DateTimeOffset End) b ) => b.Start)
+                .ToList();
+
+            var merged = MergeIntervals(intervals);
+            allCarsIntervals.Add(merged);
+        }
+
+        if (allCarsIntervals.Count == 0)
+            return new();
+
+        var intersection = allCarsIntervals[0];
+
+        for (int i = 1; i < allCarsIntervals.Count; i++)
+        {
+            intersection = IntersectIntervals(intersection, allCarsIntervals[i]);
+            if (intersection.Count == 0)
+                break;
+        }
+
+        _cache.Set(cacheKey, intersection, TimeSpan.FromMinutes(5));
+
+        return intersection;
+    }
+
+    private void InvalidateBookedIntervalsCache(Guid carModelId, Guid locationId)
+    {
+        var cacheKey = $"booked_intervals_{carModelId}_{locationId}";
+        _cache.Remove(cacheKey);
     }
 
     private static decimal CalculatePrice(IEnumerable<RentalPrice> prices, double totalHours)
@@ -141,89 +194,54 @@ public class BookingService : IBookingService
         return new List<PriceType> { PriceType.Hourly };
     }
 
-public async Task<List<(DateTimeOffset Start, DateTimeOffset End)>> GetBookedTimeIntervalsAsync(Guid carModelId, Guid locationId)
-{
-    var cars = await _carRepository.GetCarsByModelAndLocationAsync(carModelId, locationId);
-    if (cars is null || cars.Count == 0) return new();
-
-    var allCarsIntervals = new List<List<(DateTimeOffset Start, DateTimeOffset End)>>();
-
-    foreach (var car in cars)
+    private List<(DateTimeOffset Start, DateTimeOffset End)> MergeIntervals(List<(DateTimeOffset Start, DateTimeOffset End)> intervals)
     {
-        var intervals = car.Bookings
-            .Where(b => !b.IsDeleted)
-            .Select(b => (b.StartDate, b.EndDate))
-            .OrderBy(( (DateTimeOffset Start, DateTimeOffset End) b ) => b.Start)
-            .ToList();
+        if (intervals.Count == 0) return intervals;
 
-        var merged = MergeIntervals(intervals);
-        allCarsIntervals.Add(merged);
-    }
+        var merged = new List<(DateTimeOffset Start, DateTimeOffset End)>();
+        var current = intervals[0];
 
-    if (allCarsIntervals.Count == 0)
-        return new();
-
-    var intersection = allCarsIntervals[0];
-
-    for (int i = 1; i < allCarsIntervals.Count; i++)
-    {
-        intersection = IntersectIntervals(intersection, allCarsIntervals[i]);
-        if (intersection.Count == 0) 
-            break;
-    }
-
-    return intersection;
-}
-
-private List<(DateTimeOffset Start, DateTimeOffset End)> MergeIntervals(List<(DateTimeOffset Start, DateTimeOffset End)> intervals)
-{
-    if (intervals.Count == 0) return intervals;
-
-    var merged = new List<(DateTimeOffset Start, DateTimeOffset End)>();
-    var current = intervals[0];
-
-    for (int i = 1; i < intervals.Count; i++)
-    {
-        var next = intervals[i];
-        if (next.Start <= current.End) 
+        for (int i = 1; i < intervals.Count; i++)
         {
-            current.End = next.End > current.End ? next.End : current.End;
+            var next = intervals[i];
+            if (next.Start <= current.End)
+            {
+                current.End = next.End > current.End ? next.End : current.End;
+            }
+            else
+            {
+                merged.Add(current);
+                current = next;
+            }
         }
-        else
-        {
-            merged.Add(current);
-            current = next;
-        }
+        merged.Add(current);
+        return merged;
     }
-    merged.Add(current);
-    return merged;
-}
 
-private List<(DateTimeOffset Start, DateTimeOffset End)> IntersectIntervals(
-    List<(DateTimeOffset Start, DateTimeOffset End)> list1,
-    List<(DateTimeOffset Start, DateTimeOffset End)> list2)
-{
-    var result = new List<(DateTimeOffset Start, DateTimeOffset End)>();
-    int i = 0, j = 0;
-
-    while (i < list1.Count && j < list2.Count)
+    private List<(DateTimeOffset Start, DateTimeOffset End)> IntersectIntervals(
+        List<(DateTimeOffset Start, DateTimeOffset End)> list1,
+        List<(DateTimeOffset Start, DateTimeOffset End)> list2)
     {
-        var a = list1[i];
-        var b = list2[j];
+        var result = new List<(DateTimeOffset Start, DateTimeOffset End)>();
+        int i = 0, j = 0;
 
-        var start = a.Start > b.Start ? a.Start : b.Start;
-        var end = a.End < b.End ? a.End : b.End;
+        while (i < list1.Count && j < list2.Count)
+        {
+            var a = list1[i];
+            var b = list2[j];
 
-        if (start < end)
-            result.Add((start, end));
+            var start = a.Start > b.Start ? a.Start : b.Start;
+            var end = a.End < b.End ? a.End : b.End;
 
-        if (a.End < b.End)
-            i++;
-        else
-            j++;
+            if (start < end)
+                result.Add((start, end));
+
+            if (a.End < b.End)
+                i++;
+            else
+                j++;
+        }
+
+        return result;
     }
-
-    return result;
-}
-
 }

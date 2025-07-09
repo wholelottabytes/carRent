@@ -40,6 +40,26 @@ export const register = createAsyncThunk(
   }
 );
 
+export const rehydrateAuth = createAsyncThunk('auth/rehydrate', async () => {
+  const token = localStorage.getItem('token');
+  if (!token) return null;
+
+  const decoded: any = jwtDecode(token);
+  const rawRoles =
+    decoded.roles ||
+    decoded.role ||
+    decoded['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] ||
+    [];
+
+  const user: User = {
+    id: decoded.sub,
+    email: decoded.email,
+    roles: Array.isArray(rawRoles) ? rawRoles : [rawRoles],
+  };
+
+  return { token, user };
+});
+
 const authSlice = createSlice({
   name: 'auth',
   initialState,
@@ -52,7 +72,11 @@ const authSlice = createSlice({
     restoreToken: (state, action: PayloadAction<string>) => {
       state.token = action.payload;
       const decoded: any = jwtDecode(action.payload);
-      const rawRoles = decoded.roles || decoded.role || decoded['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] || [];
+      const rawRoles =
+        decoded.roles ||
+        decoded.role ||
+        decoded['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] ||
+        [];
       state.user = {
         id: decoded.sub,
         email: decoded.email,
@@ -66,7 +90,11 @@ const authSlice = createSlice({
         localStorage.setItem('token', action.payload);
         state.token = action.payload;
         const decoded: any = jwtDecode(action.payload);
-        const rawRoles = decoded.roles || decoded.role || decoded['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] || [];
+        const rawRoles =
+          decoded.roles ||
+          decoded.role ||
+          decoded['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] ||
+          [];
         state.user = {
           id: decoded.sub,
           email: decoded.email,
@@ -77,12 +105,22 @@ const authSlice = createSlice({
         localStorage.setItem('token', action.payload);
         state.token = action.payload;
         const decoded: any = jwtDecode(action.payload);
-        const rawRoles = decoded.roles || decoded.role || decoded['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] || [];
+        const rawRoles =
+          decoded.roles ||
+          decoded.role ||
+          decoded['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] ||
+          [];
         state.user = {
           id: decoded.sub,
           email: decoded.email,
           roles: Array.isArray(rawRoles) ? rawRoles : [rawRoles],
         };
+      })
+      .addCase(rehydrateAuth.fulfilled, (state, action) => {
+        if (action.payload) {
+          state.token = action.payload.token;
+          state.user = action.payload.user;
+        }
       });
   },
 });

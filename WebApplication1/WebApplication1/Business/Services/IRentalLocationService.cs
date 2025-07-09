@@ -10,6 +10,7 @@ public interface IRentalLocationService
     Task<RentalLocation> GetByIdAsync(Guid id);
     Task UpdateAsync(Guid id, UpdateRentalLocationDto dto);
     Task DeleteAsync(Guid id);
+    Task<IEnumerable<RentalLocationSimpleDto>> ListSimpleAsync();
 
     Task<PagedResult<CarModelSummaryDto>> SearchCarModelsPagedAsync(CarModelSearchParams searchParams);
 

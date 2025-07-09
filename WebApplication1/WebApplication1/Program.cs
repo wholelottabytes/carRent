@@ -18,6 +18,7 @@ using Microsoft.AspNetCore.Mvc;
 using WebApplication1.Common.Exceptions;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddMemoryCache();
 
 // DbContext and Identity
 builder.Services.AddDbContext<ApplicationDbContext>(opt => opt.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -65,6 +66,9 @@ builder.Services.AddScoped<IRentalLocationService, RentalLocationService>();
 
 builder.Services.AddScoped<ICarModelRepository, CarModelRepository>();
 builder.Services.AddScoped<ICarModelService, CarModelService>();
+
+builder.Services.AddScoped<IReviewRepository, ReviewRepository>();
+builder.Services.AddScoped<IReviewService, ReviewService>();
 
 builder.Services.AddScoped<ICarRepository, CarRepository>();
 builder.Services.AddScoped<ICarService, CarService>();

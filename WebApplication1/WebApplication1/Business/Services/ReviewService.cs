@@ -13,7 +13,8 @@ public class ReviewService : IReviewService
     {
         _reviewRepository = reviewRepository;
     }
-    public async Task<Review> UpdateReviewAsync(Guid reviewId, UpdateReviewDto dto, string userId)
+
+    public async Task<ReviewDto> UpdateReviewAsync(Guid reviewId, UpdateReviewDto dto, string userId)
     {
         var existingReview = await _reviewRepository.GetByIdAsync(reviewId)
                              ?? throw new EntityNotFoundException(nameof(Review), reviewId);
@@ -26,11 +27,20 @@ public class ReviewService : IReviewService
 
         existingReview.Rating = dto.Rating;
         existingReview.Comment = dto.Comment;
-        existingReview.CreatedAt = DateTime.UtcNow;
 
         await _reviewRepository.UpdateAsync(existingReview);
-        return existingReview;
+
+        return new ReviewDto
+        {
+            Id = existingReview.Id,
+            Rating = existingReview.Rating,
+            Comment = existingReview.Comment,
+            CreatedAt = existingReview.CreatedAt,
+            UserId = existingReview.UserId,
+            UserName = existingReview.User?.UserName ?? "Unknown"
+        };
     }
+
     public async Task<Review> CreateReviewAsync(Review review)
     {
         if (review.Rating < 1 || review.Rating > 5)
@@ -43,9 +53,20 @@ public class ReviewService : IReviewService
         await _reviewRepository.AddAsync(review);
         return review;
     }
-    public async Task<IEnumerable<Review>> GetReviewsAsync(Guid rentalLocationId, PaginationParams pagination)
+
+    public async Task<IEnumerable<ReviewDto>> GetReviewsAsync(Guid rentalLocationId, PaginationParams pagination)
     {
-        return await _reviewRepository.GetByRentalLocationIdAsync(rentalLocationId, pagination.Page, pagination.PageSize);
+        var reviews = await _reviewRepository.GetByRentalLocationIdAsync(rentalLocationId, pagination.Page, pagination.PageSize);
+
+        return reviews.Select(r => new ReviewDto
+        {
+            Id = r.Id,
+            Rating = r.Rating,
+            Comment = r.Comment,
+            CreatedAt = r.CreatedAt,
+            UserId = r.UserId,
+            UserName = r.User?.UserName ?? "Unknown"
+        });
     }
 
     public async Task<int> GetReviewsCountAsync(Guid rentalLocationId)

@@ -89,7 +89,13 @@ public class RentalLocationController : ControllerBase
         return Ok(dtos);
     }
     [HttpGet]
-    [Authorize(Roles = $"{Roles.AdminName},{Roles.UserName}")]
+    public async Task<ActionResult<IEnumerable<RentalLocationSimpleDto>>> ListSimple()
+    {
+        var locations = await _rentalLocationService.ListSimpleAsync();
+
+        return Ok(locations);
+    }
+    [HttpGet]
     public async Task<IActionResult> SearchCarModels([FromQuery] CarModelSearchParams searchParams)
     {
         var pagedResult = await _rentalLocationService.SearchCarModelsPagedAsync(searchParams);

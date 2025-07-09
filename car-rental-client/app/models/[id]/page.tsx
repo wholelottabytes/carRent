@@ -16,6 +16,7 @@ import { useSelector } from 'react-redux';
 import { RootState } from '@/lib/store';
 import { useState, useEffect } from 'react';
 import { fetcher } from '@/lib/fetcher'; 
+import Link from 'next/link';
 
 const priceLabels: Record<string, string> = {
   Hourly: 'BYN / час',
@@ -67,6 +68,7 @@ interface SelectedCarModel {
 export default function CarModelDetailsPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+const isAuthenticated = useSelector((state: RootState) => !!state.auth.user);
 
   const model = useSelector(
     (state: RootState) => state.carModel.selectedModel
@@ -121,13 +123,18 @@ export default function CarModelDetailsPage() {
     availableAtLocations, 
   } = model;
 
-  const handleBookNow = () => {
-    if (availableAtLocations && availableAtLocations.length > 0) {
-      router.push(`/booking?modelId=${model.carModelId}&locationId=${availableAtLocations[0].id}`);
-    } else {
-      alert('Для этой модели нет доступных локаций для бронирования.');
-    }
-  };
+ const handleBookNow = () => {
+  if (!isAuthenticated) {
+    router.push('/register');
+    return;
+  }
+
+  if (availableAtLocations && availableAtLocations.length > 0) {
+    router.push(`/booking?modelId=${model.carModelId}&locationId=${availableAtLocations[0].id}`);
+  } else {
+    alert('Для этой модели нет доступных локаций для бронирования.');
+  }
+};
 
   return (
     <Container sx={{ mt: 4 }}>
@@ -203,16 +210,42 @@ export default function CarModelDetailsPage() {
 
         {availableAtLocations && availableAtLocations.length > 0 ? (
           availableAtLocations.map((loc) => (
-            <Box key={loc.id} mb={2}>
-              <Typography>
-                {loc.city}, {loc.name} — {loc.address}
-              </Typography>
-              {loc.additionalServices && loc.additionalServices.length > 0 && (
-                <Typography variant="caption" color="text.secondary">
-                  Доп. услуги: {loc.additionalServices.map(s => `${s.name} (${s.price} BYN)`).join(', ')}
-                </Typography>
-              )}
-            </Box>
+                  <Box key={loc.id} mb={2}>
+          <Button
+            component={Link}
+            href={`/locations/${loc.id}`}
+            variant="text"
+            sx={{
+              p: 0,
+              minWidth: 'unset',
+              textAlign: 'left',
+              display: 'block',
+              color: 'primary.main',
+              textTransform: 'none',
+              fontWeight: 600,
+              fontSize: '1rem',
+              '&:hover': { textDecoration: 'underline' },
+            }}
+          >
+            {loc.name}
+            <br />
+            <Typography
+              component="span"
+              variant="body2"
+              color="text.secondary"
+              sx={{ fontWeight: 'normal' }}
+            >
+              {loc.city}, {loc.address}
+            </Typography>
+          </Button>
+
+          {loc.additionalServices && loc.additionalServices.length > 0 && (
+            <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5 }}>
+              Доп. услуги: {loc.additionalServices.map(s => `${s.name} (${s.price} BYN)`).join(', ')}
+            </Typography>
+          )}
+        </Box>
+
           ))
         ) : (
           <Typography color="text.secondary">Нет доступных локаций</Typography>

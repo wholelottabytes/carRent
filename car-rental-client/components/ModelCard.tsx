@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import {
   Card,
   CardMedia,
@@ -59,6 +60,7 @@ type CarModelForCard = {
   photos?: Photo[];
 };
 
+
 const priceLabels: Record<string, string> = {
   Hourly: 'BYN / час',
   Daily: 'BYN / от 1 дня',
@@ -73,37 +75,39 @@ export default function ModelCard({ model }: { model: CarModelForCard }) {
   return (
     <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       {model.photos && model.photos.length > 0 ? (
-              <Box sx={{ height: 160, overflow: 'hidden' }}>
-        <Swiper
-          modules={[Navigation, Pagination, A11y]}
-          navigation
-          pagination={{ clickable: true }}
-          spaceBetween={10}
-          slidesPerView={1}
-          style={{ height: '160px', width: '100%' }}
-        >
-          {model.photos.map((photo) => (
-            <SwiperSlide key={photo.id}>
-              <img
-                src={photo.url}
-                alt={`${model.make} ${model.modelName}`}
-                style={{
-                  width: '100%',
-                  height: '160px',
-                  objectFit: 'cover',
-                  display: 'block',
-                }}
-              />
-            </SwiperSlide>
-          ))}
-        </Swiper>
-      </Box>
+        <Box sx={{ height: 160, overflow: 'hidden' }}>
+          <Swiper
+            modules={[Navigation, Pagination, A11y]}
+            navigation
+            pagination={{ clickable: true }}
+            spaceBetween={10}
+            slidesPerView={1}
+            style={{ height: '160px', width: '100%' }}
+          >
+            {model.photos.map((photo) => (
+              <SwiperSlide key={photo.id}>
+                <Box sx={{ position: 'relative', width: '100%', height: '160px' }}>
+                  <Image
+                    src={photo.url}
+                    alt={`${model.make} ${model.modelName}`}
+                    fill
+                    style={{ objectFit: 'cover' }}
+                    sizes="(max-width: 600px) 100vw, 600px"
+                    priority={true}
+                    unoptimized
+                  />
+                </Box>
+              </SwiperSlide>
+            ))}
+          </Swiper>
+        </Box>
       ) : (
         <CardMedia
           component="img"
           height="160"
           image="https://via.placeholder.com/400x200?text=Нет+фото"
           alt="Нет фото"
+          
         />
       )}
 
@@ -134,8 +138,9 @@ export default function ModelCard({ model }: { model: CarModelForCard }) {
           <Button
             fullWidth
             onClick={() => {
-              const { photos, ...modelWithoutPhotos } = model;
-              dispatch(setSelectedModel(modelWithoutPhotos as any));
+              const modelWithoutPhotos = { ...model };
+              delete modelWithoutPhotos.photos;
+              dispatch(setSelectedModel(modelWithoutPhotos));
               router.push(`/models/${model.carModelId}`);
             }}
           >

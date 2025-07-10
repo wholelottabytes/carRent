@@ -16,7 +16,7 @@ type RegisterFormData = {
 };
 
 export default function RegisterPage() {
-  const { register, handleSubmit, formState: { errors }, setError, clearErrors } = useForm<RegisterFormData>();
+  const { register, handleSubmit, formState: { errors }, clearErrors } = useForm<RegisterFormData>();
   const dispatch = useAppDispatch();
   const router = useRouter();
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -28,9 +28,11 @@ export default function RegisterPage() {
     try {
       await dispatch(registerThunk(data)).unwrap();
       router.push('/');
-    } catch (error: any) {
+    } catch (error: unknown) {
+      if (error instanceof Error) {
       console.error('Ошибка регистрации:', error);
       setSubmitError('Ошибка регистрации. Проверьте введённые данные.');
+      }
     }
   };
 

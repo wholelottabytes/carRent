@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { jwtDecode } from 'jwt-decode';
+import {jwtDecode} from 'jwt-decode';
 import { fetcher } from '@/lib/fetcher';
 
 type User = { id: string; email: string; roles: string[] };
@@ -16,49 +16,65 @@ const initialState: AuthState = {
   status: 'idle',
 };
 
-export const login = createAsyncThunk(
+interface TokenResponse {
+  token: string;
+}
+
+interface JwtPayload {
+  sub: string;
+  email: string;
+  roles?: string[] | string;
+  role?: string[] | string;
+  'http://schemas.microsoft.com/ws/2008/06/identity/claims/role'?: string[] | string;
+}
+
+export const login = createAsyncThunk<string, { email: string; password: string }>(
   'auth/login',
-  async ({ email, password }: { email: string; password: string }, thunkAPI) => {
+  async ({ email, password }) => {
     const res = await fetcher('/api/Account/Login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     });
-    const data = await res.json();
+    const data = (await res.json()) as TokenResponse;
     return data.token;
   }
 );
 
-export const register = createAsyncThunk(
+export const register = createAsyncThunk<string, Record<string, unknown>>(
   'auth/register',
-  async (payload: any, thunkAPI) => {
+  async (payload) => {
     const res = await fetcher('/api/Account/Register', {
       method: 'POST',
       body: JSON.stringify(payload),
     });
-    const data = await res.json();
+    const data = (await res.json()) as TokenResponse;
     return data.token;
   }
 );
 
-export const rehydrateAuth = createAsyncThunk('auth/rehydrate', async () => {
-  const token = localStorage.getItem('token');
-  if (!token) return null;
+export const rehydrateAuth = createAsyncThunk<{ token: string; user: User } | null>(
+  'auth/rehydrate',
+  async () => {
+    const token = localStorage.getItem('token');
+    if (!token) return null;
 
-  const decoded: any = jwtDecode(token);
-  const rawRoles =
-    decoded.roles ||
-    decoded.role ||
-    decoded['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] ||
-    [];
+    const decoded = jwtDecode<JwtPayload>(token);
 
-  const user: User = {
-    id: decoded.sub,
-    email: decoded.email,
-    roles: Array.isArray(rawRoles) ? rawRoles : [rawRoles],
-  };
+    const rawRoles =
+      decoded.roles ??
+      decoded.role ??
+      decoded['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] ??
+      [];
 
-  return { token, user };
-});
+    const user: User = {
+      id: decoded.sub,
+      email: decoded.email,
+      roles: Array.isArray(rawRoles) ? rawRoles : [rawRoles],
+    };
+
+    return { token, user };
+  }
+);
 
 const authSlice = createSlice({
   name: 'auth',
@@ -71,11 +87,11 @@ const authSlice = createSlice({
     },
     restoreToken: (state, action: PayloadAction<string>) => {
       state.token = action.payload;
-      const decoded: any = jwtDecode(action.payload);
+      const decoded = jwtDecode<JwtPayload>(action.payload);
       const rawRoles =
-        decoded.roles ||
-        decoded.role ||
-        decoded['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] ||
+        decoded.roles ??
+        decoded.role ??
+        decoded['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] ??
         [];
       state.user = {
         id: decoded.sub,
@@ -89,11 +105,12 @@ const authSlice = createSlice({
       .addCase(login.fulfilled, (state, action) => {
         localStorage.setItem('token', action.payload);
         state.token = action.payload;
-        const decoded: any = jwtDecode(action.payload);
+
+        const decoded = jwtDecode<JwtPayload>(action.payload);
         const rawRoles =
-          decoded.roles ||
-          decoded.role ||
-          decoded['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] ||
+          decoded.roles ??
+          decoded.role ??
+          decoded['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] ??
           [];
         state.user = {
           id: decoded.sub,
@@ -104,11 +121,12 @@ const authSlice = createSlice({
       .addCase(register.fulfilled, (state, action) => {
         localStorage.setItem('token', action.payload);
         state.token = action.payload;
-        const decoded: any = jwtDecode(action.payload);
+
+        const decoded = jwtDecode<JwtPayload>(action.payload);
         const rawRoles =
-          decoded.roles ||
-          decoded.role ||
-          decoded['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] ||
+          decoded.roles ??
+          decoded.role ??
+          decoded['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] ??
           [];
         state.user = {
           id: decoded.sub,

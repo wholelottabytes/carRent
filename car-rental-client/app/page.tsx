@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   Container,
   Box,
@@ -60,6 +60,11 @@ type CarModel = {
   photos?: Photo[];
 };
 
+interface CarModelApiResponse {
+  items: CarModel[];
+  totalCount?: number;
+}
+
 export default function HomePage() {
   const [models, setModels] = useState<CarModel[]>([]);
   const [locations, setLocations] = useState<RentalLocationSimpleDto[]>([]);
@@ -74,15 +79,15 @@ export default function HomePage() {
 
   useEffect(() => {
     fetcher('/api/RentalLocation/ListSimple')
-      .then((res) => res.json())
+      .then((res) => res.json() as Promise<RentalLocationSimpleDto[]>)
       .then(setLocations)
-      .catch((e) => {
+      .catch((e: unknown) => {
         console.error('Ошибка при загрузке локаций:', e);
         setLocations([]);
       });
   }, []);
 
-  const loadModels = async () => {
+  const loadModels = useCallback(async () => {
     try {
       const params = new URLSearchParams();
 
@@ -94,20 +99,16 @@ export default function HomePage() {
       params.append('Page', '1');
       params.append('PageSize', '20');
 
-      const resModels = await fetcher(`/api/RentalLocation/SearchCarModels?${params.toString()}`);
-      const dataModels = await resModels.json();
+      const res = await fetcher(`/api/RentalLocation/SearchCarModels?${params.toString()}`);
+      const data: CarModelApiResponse = await res.json();
 
-      if (!Array.isArray(dataModels.items)) {
+      if (!Array.isArray(data.items)) {
         setModels([]);
         return;
       }
 
-      const modelsData: CarModel[] = dataModels.items.map((model: any) => ({
-        ...model,
-      }));
-
       const modelsWithPhotos = await Promise.all(
-        modelsData.map(async (model) => {
+        data.items.map(async (model) => {
           try {
             const resPhotos = await fetcher(`/api/CarImage/GetByCarId/${model.carModelId}`);
             const photos: Photo[] = await resPhotos.json();
@@ -118,7 +119,7 @@ export default function HomePage() {
             }));
 
             return { ...model, photos: photosWithFullUrl };
-          } catch (photoError) {
+          } catch (photoError: unknown) {
             console.error(`Ошибка при загрузке фото для модели ${model.carModelId}:`, photoError);
             return { ...model, photos: [] };
           }
@@ -126,15 +127,15 @@ export default function HomePage() {
       );
 
       setModels(modelsWithPhotos);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Ошибка при загрузке моделей с фото:', error);
       setModels([]);
     }
-  };
+  }, [filters, apiBaseUrl]);
 
   useEffect(() => {
     loadModels();
-  }, []);
+  }, [loadModels]);
 
   const onFilterChange = (field: keyof typeof filters, value: string) => {
     setFilters((f) => ({ ...f, [field]: value }));
@@ -196,7 +197,7 @@ export default function HomePage() {
 
         <TextField
           label="Дата начала"
-           type="datetime-local"
+          type="datetime-local"
           value={filters.startDate}
           onChange={(e) => onFilterChange('startDate', e.target.value)}
           InputLabelProps={{ shrink: true }}
@@ -205,7 +206,7 @@ export default function HomePage() {
 
         <TextField
           label="Дата окончания"
-            type="datetime-local"
+          type="datetime-local"
           value={filters.endDate}
           onChange={(e) => onFilterChange('endDate', e.target.value)}
           InputLabelProps={{ shrink: true }}
@@ -230,7 +231,11 @@ export default function HomePage() {
         }}
       >
         {models.length === 0 && (
-          <Typography variant="body1" color="text.secondary" sx={{ gridColumn: '1/-1', textAlign: 'center' }}>
+          <Typography
+            variant="body1"
+            color="text.secondary"
+            sx={{ gridColumn: '1/-1', textAlign: 'center' }}
+          >
             Нет доступных моделей по заданным фильтрам.
           </Typography>
         )}

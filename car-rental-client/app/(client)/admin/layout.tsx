@@ -1,6 +1,6 @@
 'use client';
 import { Container, Box } from '@mui/material';
-import AdminTabs from '../../components/AdminTabs';
+import AdminTabs from '@/components/AdminTabs';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (

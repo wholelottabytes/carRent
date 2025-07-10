@@ -13,7 +13,7 @@ type LoginFormData = {
 };
 
 export default function LoginPage() {
-  const { register, handleSubmit, formState: { errors }, setError, clearErrors } = useForm<LoginFormData>();
+  const { register, handleSubmit, formState: { errors }, clearErrors } = useForm<LoginFormData>();
   const dispatch = useAppDispatch();
   const router = useRouter();
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -24,7 +24,7 @@ export default function LoginPage() {
     try {
       await dispatch(login(data)).unwrap();
       router.push('/');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Ошибка входа:', err);
       setSubmitError('Неверный email или пароль');
      

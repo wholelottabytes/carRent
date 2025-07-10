@@ -111,13 +111,13 @@ export default function BookingPage() {
 
   const fullyBookedDates = useMemo(() => {
     return Object.entries(bookedHoursMap)
-      .filter(([_, hours]) => hours.size >= 24)
+      .filter(([, hours]) => hours.size >= 24)
       .map(([dateStr]) => new Date(dateStr));
   }, [bookedHoursMap]);
 
   const partiallyBookedDates = useMemo(() => {
     return Object.entries(bookedHoursMap)
-      .filter(([_, hours]) => hours.size > 0 && hours.size < 24)
+      .filter(([, hours]) => hours.size > 0 && hours.size < 24)
       .map(([dateStr]) => new Date(dateStr));
   }, [bookedHoursMap]);
 
@@ -208,8 +208,10 @@ export default function BookingPage() {
         const errData = await resp.json();
         setError(errData.detail || errData.message || 'Ошибка бронирования.');
       }
-    } catch (e: any) {
+    } catch (e: unknown) {
+      if (e instanceof Error) {
       setError(e.message || 'Ошибка бронирования.');
+      }
     }
   };
 

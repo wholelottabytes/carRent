@@ -17,16 +17,30 @@ import { useAppSelector } from '@/lib/hooks';
 import { fetcher } from '@/lib/fetcher';
 
 export default function LocationPage() {
+  interface Location {
+  id: string;
+  city: string;
+  name: string;
+  address: string;
+}
+
+interface Review {
+  id?: string;
+  userId: string;
+  userName: string;
+  rating: number;
+  comment: string;
+}
   const { id } = useParams();
   const router = useRouter();
   const user = useAppSelector((state) => state.auth.user);
 
-  const [location, setLocation] = useState<any>(null);
-  const [reviews, setReviews] = useState<any[]>([]);
+const [location, setLocation] = useState<Location | null>(null);
+const [reviews, setReviews] = useState<Review[]>([]);
   const [comment, setComment] = useState('');
   const [rating, setRating] = useState(5);
 
-  const [userReview, setUserReview] = useState<any | null>(null);
+const [userReview, setUserReview] = useState<Review | null>(null);
   const [notification, setNotification] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -41,7 +55,7 @@ export default function LocationPage() {
         setReviews(data.reviews);
 
         if (user && data.reviews) {
-          const existing = data.reviews.find((r: any) => r.userId === user.id);
+          const existing = data.reviews.find((r: Review) => r.userId === user.id);
           if (existing) {
             setUserReview(existing);
             setComment(existing.comment);

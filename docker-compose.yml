@@ -1,0 +1,43 @@
+services:
+  db:
+    image: postgres:15
+    container_name: car-rental-db
+    restart: always
+    environment:
+      POSTGRES_DB: mydb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: aszx
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  backend:
+    build:
+      context: ./WebApplication1
+      dockerfile: WebApplication1/Dockerfile
+    container_name: car-rental-backend
+    ports:
+      - "5000:5000"   
+    depends_on:
+      - db
+    environment:
+      - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Database=mydb;Username=postgres;Password=aszx
+    volumes:
+      - /home/a/carRent/WebApplication1/WebApplication1/wwwroot/uploads:/app/wwwroot/uploads
+
+  frontend:
+    build:
+      context: ./car-rental-client
+      dockerfile: Dockerfile
+    container_name: car-rental-frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:5000
+
+volumes:
+  postgres_data:
+

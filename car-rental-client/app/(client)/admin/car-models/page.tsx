@@ -192,9 +192,11 @@ useEffect(() => {
       });
       alert('Модель успешно создана!');
       window.location.reload();
-    } catch (err: any) {
+    } catch (err: unknown) {
+      if (err instanceof Error) {
       console.error('Ошибка при создании модели:', err);
       setSubmitError(err.message || 'Произошла неизвестная ошибка, попробуйте позже');
+      }
     }
   };
 

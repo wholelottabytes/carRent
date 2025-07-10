@@ -1,16 +1,12 @@
-// app/admin/additional-services/page.tsx
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import {
   Container,
   Box,
   TextField,
   Button,
   Typography,
-  List,
-  ListItem,
-  ListItemText,
   IconButton,
   Alert,
   MenuItem,
@@ -51,9 +47,25 @@ export default function AdditionalServicesAdminPage() {
   const [error, setError] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
 
+  const loadLocations = useCallback(async () => {
+    try {
+      const res = await fetcher('/api/RentalLocation/List');
+      const data: RentalLocation[] = await res.json();
+      setAllLocations(data);
+      if (data.length > 0 && !selectedLocationForFilter) {
+        setSelectedLocationForFilter(data[0].id);
+      }
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        console.error('Failed to load locations:', err);
+        setError(err.message || 'Ошибка загрузки локаций.');
+      }
+    }
+  }, [selectedLocationForFilter]);
+
   useEffect(() => {
     loadLocations();
-  }, []);
+  }, [loadLocations]);
 
   useEffect(() => {
     if (selectedLocationForFilter) {
@@ -64,30 +76,17 @@ export default function AdditionalServicesAdminPage() {
     }
   }, [selectedLocationForFilter]);
 
-
-  const loadLocations = async () => {
-    try {
-      const res = await fetcher('/api/RentalLocation/List');
-      const data: RentalLocation[] = await res.json();
-      setAllLocations(data);
-      if (data.length > 0 && !selectedLocationForFilter) {
-        setSelectedLocationForFilter(data[0].id);
-      }
-    } catch (err: any) {
-      console.error('Failed to load locations:', err);
-      setError(err.message || 'Ошибка загрузки локаций.');
-    }
-  };
-
   const loadServicesForLocation = async (locationId: string) => {
     setError(null);
     try {
       const res = await fetcher(`/api/AdditionalService/GetByLocation/${locationId}`);
       const data: AdditionalService[] = await res.json();
       setFilteredServices(data);
-    } catch (err: any) {
-      console.error('Error fetching services for location:', err);
-      setError(err.message || 'Ошибка при загрузке услуг для локации.');
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        console.error('Error fetching services for location:', err);
+        setError(err.message || 'Ошибка при загрузке услуг для локации.');
+      }
       setFilteredServices([]); 
     }
   };
@@ -115,9 +114,11 @@ export default function AdditionalServicesAdminPage() {
       }
       resetForm();
       loadServicesForLocation(selectedLocationForFilter); 
-    } catch (err: any) {
-      console.error('Error submitting service:', err);
-      setError(err.message || 'Произошла ошибка при сохранении услуги.');
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        console.error('Error submitting service:', err);
+        setError(err.message || 'Произошла ошибка при сохранении услуги.');
+      }
     }
   };
 
@@ -137,9 +138,12 @@ export default function AdditionalServicesAdminPage() {
       });
       alert('Услуга успешно удалена!');
       loadServicesForLocation(selectedLocationForFilter); 
-    } catch (err: any) {
-      console.error('Error deleting service:', err);
-      setError(err.message || 'Ошибка при удалении услуги.');
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('Неизвестная ошибка');
+      }
     }
   };
 
@@ -188,7 +192,7 @@ export default function AdditionalServicesAdminPage() {
               const newLocationId = e.target.value;
               setCurrentServiceForm((prev) => ({ ...prev, rentalLocationId: newLocationId }));
               if (!isEditing) {
-                  setSelectedLocationForFilter(newLocationId);
+                setSelectedLocationForFilter(newLocationId);
               }
             }}
             disabled={isEditing} 

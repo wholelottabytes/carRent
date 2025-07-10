@@ -14,6 +14,7 @@ import { useSelector } from 'react-redux';
 import { RootState } from '@/lib/store';
 import { useState, useEffect } from 'react';
 import { fetcher } from '@/lib/fetcher';
+import Image from 'next/image';
 import Link from 'next/link';
 
 import { Swiper, SwiperSlide } from 'swiper/react';
@@ -83,7 +84,6 @@ export default function CarModelDetailsPage() {
 
   const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL ?? '';
 
-  // Загрузка всех фото модели
   useEffect(() => {
     if (model?.carModelId) {
       const fetchPhotos = async () => {
@@ -195,15 +195,16 @@ export default function CarModelDetailsPage() {
                       alignItems: 'center',
                     }}
                   >
-                    <img
+                    <Image
                       src={photo.url}
                       alt={`${make} ${modelName}`}
+                      width={600}  
+                      height={300}
                       style={{
-                        width: '100%',
-                        height: '300px',
                         objectFit: 'cover',
                         display: 'block',
                       }}
+                      priority
                     />
                   </SwiperSlide>
                 ))}

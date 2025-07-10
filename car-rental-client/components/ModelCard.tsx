@@ -1,4 +1,3 @@
-// app/components/ModelCard.tsx
 'use client';
 
 import {
@@ -7,13 +6,17 @@ import {
   CardContent,
   Typography,
   Box,
-  Stack,
   Button,
 } from '@mui/material';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAppDispatch } from '@/lib/hooks';
 import { setSelectedModel } from '@/features/carModel/carModelSlice';
+
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { Navigation, Pagination, A11y } from 'swiper/modules';
+import 'swiper/css';
+import 'swiper/css/navigation';
+import 'swiper/css/pagination';
 
 type Photo = {
   id: string;
@@ -52,8 +55,8 @@ type CarModelForCard = {
   fuelConsumptionPer100Km: number;
   availableCarsCount: number;
   rentalPrices?: RentalPriceDto[];
-  availableAtLocations?: RentalLocationWithServicesDto[]; 
-  photos?: Photo[]; 
+  availableAtLocations?: RentalLocationWithServicesDto[];
+  photos?: Photo[];
 };
 
 const priceLabels: Record<string, string> = {
@@ -67,17 +70,43 @@ export default function ModelCard({ model }: { model: CarModelForCard }) {
   const dispatch = useAppDispatch();
   const router = useRouter();
 
-  const photoUrl =
-    model.photos?.[0]?.url ?? 'https://via.placeholder.com/400x200?text=Нет+фото';
-
   return (
     <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <CardMedia
-        component="img"
-        height="160"
-        image={photoUrl}
-        alt={`${model.make} ${model.modelName}`}
-      />
+      {model.photos && model.photos.length > 0 ? (
+              <Box sx={{ height: 160, overflow: 'hidden' }}>
+        <Swiper
+          modules={[Navigation, Pagination, A11y]}
+          navigation
+          pagination={{ clickable: true }}
+          spaceBetween={10}
+          slidesPerView={1}
+          style={{ height: '160px', width: '100%' }}
+        >
+          {model.photos.map((photo) => (
+            <SwiperSlide key={photo.id}>
+              <img
+                src={photo.url}
+                alt={`${model.make} ${model.modelName}`}
+                style={{
+                  width: '100%',
+                  height: '160px',
+                  objectFit: 'cover',
+                  display: 'block',
+                }}
+              />
+            </SwiperSlide>
+          ))}
+        </Swiper>
+      </Box>
+      ) : (
+        <CardMedia
+          component="img"
+          height="160"
+          image="https://via.placeholder.com/400x200?text=Нет+фото"
+          alt="Нет фото"
+        />
+      )}
+
       <CardContent sx={{ flexGrow: 1 }}>
         <Typography variant="h6" gutterBottom>
           {model.make} {model.modelName}

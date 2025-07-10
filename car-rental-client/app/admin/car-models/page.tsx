@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Container,
   Box,
@@ -10,6 +10,12 @@ import {
   Typography,
   IconButton,
   Alert,
+  Table,
+  TableHead,
+  TableBody,
+  TableRow,
+  TableCell,
+  CircularProgress,
 } from '@mui/material';
 import { Add as AddIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import { fetcher } from '@/lib/fetcher';
@@ -36,6 +42,14 @@ type FormErrorKeys =
   | 'files';
 
 type FormErrors = Record<FormErrorKeys, string | null>;
+
+type CarModelDto = {
+  id: string;
+  make: string;
+  modelName: string;
+  year: number;
+  transmission: string;
+};
 
 export default function CarModelsAdminPage() {
   const [form, setForm] = useState({
@@ -64,11 +78,33 @@ export default function CarModelsAdminPage() {
   });
   const [submitError, setSubmitError] = useState<string | null>(null);
 
+  const [models, setModels] = useState<CarModelDto[]>([]);
+  const [isLoadingModels, setIsLoadingModels] = useState(true);
+
+useEffect(() => {
+  fetcher('/api/CarModel/List')
+    .then(res => res.json())
+    .then(setModels)
+    .catch((err) => console.error('Ошибка загрузки моделей', err))
+    .finally(() => setIsLoadingModels(false));
+}, []);
+
   const onAddPrice = () =>
     setPrices((prev) => [...prev, { priceType: 'Hourly', price: 0 }]);
 
   const onRemovePrice = (idx: number) =>
     setPrices((prev) => prev.filter((_, i) => i !== idx));
+
+  const deleteModel = async (id: string) => {
+    if (!confirm('Удалить эту модель?')) return;
+    try {
+      await fetcher(`/api/CarModel/Delete/${id}`, { method: 'DELETE' });
+      setModels((prev) => prev.filter((m) => m.id !== id));
+    } catch (err) {
+      console.error('Ошибка удаления модели:', err);
+      alert('Не удалось удалить модель');
+    }
+  };
 
   const validate = () => {
     const newErrors: FormErrors = {
@@ -283,13 +319,35 @@ export default function CarModelsAdminPage() {
               multiple
               type="file"
               accept="image/*"
-              onChange={(e) => e.target.files && setFiles(Array.from(e.target.files))}
+              onChange={(e) => {
+                if (!e.target.files) return;
+                const newFiles = Array.from(e.target.files);
+                setFiles((prev) => [...prev, ...newFiles]);
+              }}
             />
           </Button>
           {errors.files && <Typography color="error">{errors.files}</Typography>}
           <Box mt={1}>
-            {files.map((f) => (
-              <Typography key={f.name}>{f.name}</Typography>
+            {files.map((f, idx) => (
+              <Box
+                key={f.name + idx}
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  border: '1px solid #ccc',
+                  borderRadius: 1,
+                  padding: 1,
+                  mb: 1,
+                }}
+              >
+                <Typography sx={{ maxWidth: '70%', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {f.name}
+                </Typography>
+                <IconButton onClick={() => setFiles((prev) => prev.filter((_, i) => i !== idx))}>
+                  <DeleteIcon />
+                </IconButton>
+              </Box>
             ))}
           </Box>
         </Box>
@@ -378,6 +436,44 @@ export default function CarModelsAdminPage() {
           </Button>
         </Box>
       </Box>
+
+      {/* Таблица моделей */}
+      <Typography variant="h6" sx={{ mt: 4 }}>
+        Существующие модели
+      </Typography>
+
+      {isLoadingModels ? (
+        <CircularProgress />
+      ) : models.length === 0 ? (
+        <Typography>Модели не найдены</Typography>
+      ) : (
+        <Table sx={{ mt: 2 }}>
+          <TableHead>
+            <TableRow>
+              <TableCell>Марка</TableCell>
+              <TableCell>Модель</TableCell>
+              <TableCell>Год</TableCell>
+              <TableCell>Коробка</TableCell>
+              <TableCell>Действия</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {models.map((m) => (
+              <TableRow key={m.id}>
+                <TableCell>{m.make}</TableCell>
+                <TableCell>{m.modelName}</TableCell>
+                <TableCell>{m.year}</TableCell>
+                <TableCell>{m.transmission}</TableCell>
+                <TableCell>
+                  <IconButton onClick={() => deleteModel(m.id)}>
+                    <DeleteIcon />
+                  </IconButton>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      )}
     </Container>
   );
 }

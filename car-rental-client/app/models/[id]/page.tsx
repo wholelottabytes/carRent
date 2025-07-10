@@ -1,4 +1,3 @@
-// app/models/[id]/page.tsx
 'use client';
 
 import {
@@ -7,7 +6,6 @@ import {
   Box,
   Card,
   CardContent,
-  CardMedia,
   Divider,
   Button,
 } from '@mui/material';
@@ -15,8 +13,15 @@ import { useParams, useRouter } from 'next/navigation';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/lib/store';
 import { useState, useEffect } from 'react';
-import { fetcher } from '@/lib/fetcher'; 
+import { fetcher } from '@/lib/fetcher';
 import Link from 'next/link';
+
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { Navigation, Pagination, A11y } from 'swiper/modules';
+
+import 'swiper/css';
+import 'swiper/css/navigation';
+import 'swiper/css/pagination';
 
 const priceLabels: Record<string, string> = {
   Hourly: 'BYN / час',
@@ -62,47 +67,65 @@ interface SelectedCarModel {
   fuelConsumptionPer100Km: number;
   rentalPrices?: RentalPriceDto[];
   availableCarsCount?: number;
-  availableAtLocations?: RentalLocationWithServicesDto[]; 
+  availableAtLocations?: RentalLocationWithServicesDto[];
 }
 
 export default function CarModelDetailsPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-const isAuthenticated = useSelector((state: RootState) => !!state.auth.user);
+  const isAuthenticated = useSelector((state: RootState) => !!state.auth.user);
 
   const model = useSelector(
     (state: RootState) => state.carModel.selectedModel
   ) as SelectedCarModel | null;
 
-  const [carPhotoUrl, setCarPhotoUrl] = useState<string | null>(null);
+  const [photos, setPhotos] = useState<Photo[]>([]);
 
   const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL ?? '';
 
+  // Загрузка всех фото модели
   useEffect(() => {
     if (model?.carModelId) {
-      const fetchPhoto = async () => {
+      const fetchPhotos = async () => {
         try {
           const res = await fetcher(`/api/CarImage/GetByCarId/${model.carModelId}`);
           if (res.ok) {
-            const photos: Photo[] = await res.json();
-            if (photos && photos.length > 0) {
-              const url = photos[0].url.startsWith('http') ? photos[0].url : apiBaseUrl + photos[0].url;
-              setCarPhotoUrl(url);
-            } else {
-              setCarPhotoUrl('https://via.placeholder.com/600x300?text=Нет+фото');
-            }
+            const data: Photo[] = await res.json();
+            const photosWithFullUrl = data.map((p) => ({
+              ...p,
+              url: p.url.startsWith('http') ? p.url : apiBaseUrl + p.url,
+            }));
+            setPhotos(
+              photosWithFullUrl.length
+                ? photosWithFullUrl
+                : [
+                    {
+                      id: 'placeholder',
+                      url: 'https://via.placeholder.com/600x300?text=Нет+фото',
+                    },
+                  ]
+            );
           } else {
-            console.error('Failed to fetch photos:', res.statusText);
-            setCarPhotoUrl('https://via.placeholder.com/600x300?text=Ошибка+загрузки+фото');
+            setPhotos([
+              {
+                id: 'error',
+                url: 'https://via.placeholder.com/600x300?text=Ошибка+загрузки+фото',
+              },
+            ]);
           }
         } catch (error) {
           console.error('Error fetching photos:', error);
-          setCarPhotoUrl('https://via.placeholder.com/600x300?text=Ошибка+загрузки+фото');
+          setPhotos([
+            {
+              id: 'error',
+              url: 'https://via.placeholder.com/600x300?text=Ошибка+загрузки+фото',
+            },
+          ]);
         }
       };
-      fetchPhoto();
+      fetchPhotos();
     }
-  }, [model?.carModelId, apiBaseUrl]); 
+  }, [model?.carModelId, apiBaseUrl]);
 
   if (!model || model.carModelId !== id) {
     return (
@@ -120,21 +143,23 @@ const isAuthenticated = useSelector((state: RootState) => !!state.auth.user);
     seatingCapacity,
     fuelConsumptionPer100Km,
     rentalPrices,
-    availableAtLocations, 
+    availableAtLocations,
   } = model;
 
- const handleBookNow = () => {
-  if (!isAuthenticated) {
-    router.push('/register');
-    return;
-  }
+  const handleBookNow = () => {
+    if (!isAuthenticated) {
+      router.push('/register');
+      return;
+    }
 
-  if (availableAtLocations && availableAtLocations.length > 0) {
-    router.push(`/booking?modelId=${model.carModelId}&locationId=${availableAtLocations[0].id}`);
-  } else {
-    alert('Для этой модели нет доступных локаций для бронирования.');
-  }
-};
+    if (availableAtLocations && availableAtLocations.length > 0) {
+      router.push(
+        `/booking?modelId=${model.carModelId}&locationId=${availableAtLocations[0].id}`
+      );
+    } else {
+      alert('Для этой модели нет доступных локаций для бронирования.');
+    }
+  };
 
   return (
     <Container sx={{ mt: 4 }}>
@@ -142,19 +167,52 @@ const isAuthenticated = useSelector((state: RootState) => !!state.auth.user);
         {make} {modelName}
       </Typography>
 
-      <Box display="flex" flexDirection={{ xs: 'column', md: 'row' }} gap={4} mb={4}>
-        <Box flex={1}>
+      <Box
+        display="flex"
+        flexDirection={{ xs: 'column', md: 'row' }}
+        gap={4}
+        mb={4}
+        sx={{ alignItems: 'flex-start' }}
+      >
+        <Box sx={{ width: '100%', maxWidth: 600 }}>
           <Card>
-            <CardMedia
-              component="img"
-              height="300"
-              image={carPhotoUrl || 'https://via.placeholder.com/600x300?text=Загрузка+фото...'}
-              alt={`${make} ${modelName}`}
-            />
+            <Box sx={{ height: 300, width: '100%', overflow: 'hidden' }}>
+              <Swiper
+                modules={[Navigation, Pagination, A11y]}
+                navigation
+                pagination={{ clickable: true }}
+                spaceBetween={10}
+                slidesPerView={1}
+                style={{ height: '300px', width: '100%' }}
+              >
+                {photos.map((photo) => (
+                  <SwiperSlide
+                    key={photo.id}
+                    style={{
+                      height: '300px',
+                      display: 'flex',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                    }}
+                  >
+                    <img
+                      src={photo.url}
+                      alt={`${make} ${modelName}`}
+                      style={{
+                        width: '100%',
+                        height: '300px',
+                        objectFit: 'cover',
+                        display: 'block',
+                      }}
+                    />
+                  </SwiperSlide>
+                ))}
+              </Swiper>
+            </Box>
           </Card>
         </Box>
 
-        <Box flex={1}>
+        <Box sx={{ flex: 1 }}>
           <Card>
             <CardContent>
               <Typography variant="subtitle1">
@@ -210,42 +268,42 @@ const isAuthenticated = useSelector((state: RootState) => !!state.auth.user);
 
         {availableAtLocations && availableAtLocations.length > 0 ? (
           availableAtLocations.map((loc) => (
-                  <Box key={loc.id} mb={2}>
-          <Button
-            component={Link}
-            href={`/locations/${loc.id}`}
-            variant="text"
-            sx={{
-              p: 0,
-              minWidth: 'unset',
-              textAlign: 'left',
-              display: 'block',
-              color: 'primary.main',
-              textTransform: 'none',
-              fontWeight: 600,
-              fontSize: '1rem',
-              '&:hover': { textDecoration: 'underline' },
-            }}
-          >
-            {loc.name}
-            <br />
-            <Typography
-              component="span"
-              variant="body2"
-              color="text.secondary"
-              sx={{ fontWeight: 'normal' }}
-            >
-              {loc.city}, {loc.address}
-            </Typography>
-          </Button>
+            <Box key={loc.id} mb={2}>
+              <Button
+                component={Link}
+                href={`/locations/${loc.id}`}
+                variant="text"
+                sx={{
+                  p: 0,
+                  minWidth: 'unset',
+                  textAlign: 'left',
+                  display: 'block',
+                  color: 'primary.main',
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  fontSize: '1rem',
+                  '&:hover': { textDecoration: 'underline' },
+                }}
+              >
+                {loc.name}
+                <br />
+                <Typography
+                  component="span"
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ fontWeight: 'normal' }}
+                >
+                  {loc.city}, {loc.address}
+                </Typography>
+              </Button>
 
-          {loc.additionalServices && loc.additionalServices.length > 0 && (
-            <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5 }}>
-              Доп. услуги: {loc.additionalServices.map(s => `${s.name} (${s.price} BYN)`).join(', ')}
-            </Typography>
-          )}
-        </Box>
-
+              {loc.additionalServices && loc.additionalServices.length > 0 && (
+                <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5 }}>
+                  Доп. услуги:{' '}
+                  {loc.additionalServices.map((s) => `${s.name} (${s.price} BYN)`).join(', ')}
+                </Typography>
+              )}
+            </Box>
           ))
         ) : (
           <Typography color="text.secondary">Нет доступных локаций</Typography>

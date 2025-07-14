@@ -13,10 +13,20 @@ type LoginFormData = {
 };
 
 export default function LoginPage() {
-  const { register, handleSubmit, formState: { errors }, clearErrors } = useForm<LoginFormData>();
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    clearErrors,
+    watch,
+  } = useForm<LoginFormData>();
+
   const dispatch = useAppDispatch();
   const router = useRouter();
   const [submitError, setSubmitError] = useState<string | null>(null);
+
+  const emailValue = watch('email');
+  const passwordValue = watch('password');
 
   const onSubmit = async (data: LoginFormData) => {
     clearErrors();
@@ -27,7 +37,6 @@ export default function LoginPage() {
     } catch (err: unknown) {
       console.error('Ошибка входа:', err);
       setSubmitError('Неверный email или пароль');
-     
     }
   };
 
@@ -41,11 +50,14 @@ export default function LoginPage() {
         </Alert>
       )}
 
-      <form onSubmit={handleSubmit(onSubmit)} noValidate>
+      <form onSubmit={handleSubmit(onSubmit)} noValidate autoComplete="off">
         <TextField
           label="Email"
+          type="email"
           fullWidth
           margin="normal"
+          autoComplete="off"
+          slotProps={{ inputLabel: emailValue ? { shrink: true } : undefined }}
           {...register('email', {
             required: 'Email обязателен',
             pattern: {
@@ -62,6 +74,8 @@ export default function LoginPage() {
           type="password"
           fullWidth
           margin="normal"
+          autoComplete="off"
+          slotProps={{ inputLabel: passwordValue ? { shrink: true } : undefined }}
           {...register('password', {
             required: 'Пароль обязателен',
             minLength: {

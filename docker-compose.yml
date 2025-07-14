@@ -30,13 +30,13 @@ services:
     build:
       context: ./car-rental-client
       dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:5000
     container_name: car-rental-frontend
     ports:
       - "3000:3000"
     depends_on:
       - backend
-    environment:
-      - NEXT_PUBLIC_API_URL=http://localhost:5000
 
 volumes:
   postgres_data:

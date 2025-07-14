@@ -205,6 +205,7 @@ export default function CarModelDetailsPage() {
                         display: 'block',
                       }}
                       priority
+                      unoptimized
                     />
                   </SwiperSlide>
                 ))}

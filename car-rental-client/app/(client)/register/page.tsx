@@ -16,10 +16,23 @@ type RegisterFormData = {
 };
 
 export default function RegisterPage() {
-  const { register, handleSubmit, formState: { errors }, clearErrors } = useForm<RegisterFormData>();
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    clearErrors,
+    watch,
+  } = useForm<RegisterFormData>();
+
   const dispatch = useAppDispatch();
   const router = useRouter();
   const [submitError, setSubmitError] = useState<string | null>(null);
+
+  const emailValue = watch('email');
+  const passwordValue = watch('password');
+  const firstNameValue = watch('firstName');
+  const lastNameValue = watch('lastName');
+  const licenseNumberValue = watch('licenseNumber');
 
   const onSubmit = async (data: RegisterFormData) => {
     clearErrors();
@@ -30,8 +43,8 @@ export default function RegisterPage() {
       router.push('/');
     } catch (error: unknown) {
       if (error instanceof Error) {
-      console.error('Ошибка регистрации:', error);
-      setSubmitError('Ошибка регистрации. Проверьте введённые данные.');
+        console.error('Ошибка регистрации:', error);
+        setSubmitError('Ошибка регистрации. Проверьте введённые данные.');
       }
     }
   };
@@ -48,12 +61,14 @@ export default function RegisterPage() {
         </Alert>
       )}
 
-      <form onSubmit={handleSubmit(onSubmit)} noValidate>
+      <form onSubmit={handleSubmit(onSubmit)} noValidate autoComplete="off">
         <TextField
           fullWidth
           label="Email"
           type="email"
           margin="normal"
+          autoComplete="off"
+          slotProps={{ inputLabel: emailValue ? { shrink: true } : undefined }}
           {...register('email', {
             required: 'Email обязателен',
             pattern: {
@@ -70,6 +85,8 @@ export default function RegisterPage() {
           label="Пароль"
           type="password"
           margin="normal"
+          autoComplete="off"
+          slotProps={{ inputLabel: passwordValue ? { shrink: true } : undefined }}
           {...register('password', {
             required: 'Пароль обязателен',
             minLength: {
@@ -85,6 +102,8 @@ export default function RegisterPage() {
           fullWidth
           label="Имя"
           margin="normal"
+          autoComplete="off"
+          slotProps={{ inputLabel: firstNameValue ? { shrink: true } : undefined }}
           {...register('firstName')}
         />
 
@@ -92,6 +111,8 @@ export default function RegisterPage() {
           fullWidth
           label="Фамилия"
           margin="normal"
+          autoComplete="off"
+          slotProps={{ inputLabel: lastNameValue ? { shrink: true } : undefined }}
           {...register('lastName')}
         />
 
@@ -99,6 +120,8 @@ export default function RegisterPage() {
           fullWidth
           label="Номер прав"
           margin="normal"
+          autoComplete="off"
+          slotProps={{ inputLabel: licenseNumberValue ? { shrink: true } : undefined }}
           {...register('licenseNumber')}
         />
 

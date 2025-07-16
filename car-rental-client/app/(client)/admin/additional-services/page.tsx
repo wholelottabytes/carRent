@@ -1,5 +1,5 @@
 'use client';
-
+import React from 'react';
 import { useEffect, useState, useCallback } from 'react';
 import {
   Container,
@@ -8,16 +8,27 @@ import {
   Button,
   Typography,
   IconButton,
-  Alert,
+  Alert as MuiAlert,
   MenuItem,
   Table,
   TableHead,
   TableRow,
   TableCell,
   TableBody,
+  Snackbar,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  AlertProps,
 } from '@mui/material';
 import { Add as AddIcon, Delete as DeleteIcon, Edit as EditIcon } from '@mui/icons-material';
 import { fetcher } from '@/lib/fetcher'; 
+
+const Alert = React.forwardRef<HTMLDivElement, AlertProps>(function Alert(props, ref) {
+  return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
+});
 
 interface AdditionalService {
   id: string;
@@ -46,6 +57,13 @@ export default function AdditionalServicesAdminPage() {
   const [filteredServices, setFilteredServices] = useState<AdditionalService[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
+
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error' | 'warning' | 'info'>('success');
+
+  const [openDialog, setOpenDialog] = useState(false);
+  const [serviceToDeleteId, setServiceToDeleteId] = useState<string | null>(null);
 
   const loadLocations = useCallback(async () => {
     try {
@@ -104,20 +122,25 @@ export default function AdditionalServicesAdminPage() {
           method: 'PUT',
           body: JSON.stringify(currentServiceForm),
         });
-        alert('Услуга успешно обновлена!');
+        setSnackbarMessage('Услуга успешно обновлена!');
+        setSnackbarSeverity('success');
       } else {
         await fetcher('/api/AdditionalService/Create', {
           method: 'POST',
           body: JSON.stringify(currentServiceForm),
         });
-        alert('Услуга успешно создана!');
+        setSnackbarMessage('Услуга успешно создана!');
+        setSnackbarSeverity('success');
       }
+      setSnackbarOpen(true);
       resetForm();
       loadServicesForLocation(selectedLocationForFilter); 
     } catch (err: unknown) {
       if (err instanceof Error) {
         console.error('Error submitting service:', err);
-        setError(err.message || 'Произошла ошибка при сохранении услуги.');
+        setSnackbarMessage(err.message || 'Произошла ошибка при сохранении услуги.');
+        setSnackbarSeverity('error');
+        setSnackbarOpen(true);
       }
     }
   };
@@ -129,22 +152,42 @@ export default function AdditionalServicesAdminPage() {
 
   const handleDelete = async (serviceId: string) => {
     setError(null);
-    if (!confirm('Вы уверены, что хотите удалить эту услугу?')) {
-      return;
-    }
     try {
       await fetcher(`/api/AdditionalService/Delete/${serviceId}`, {
         method: 'DELETE',
       });
-      alert('Услуга успешно удалена!');
+      setSnackbarMessage('Услуга успешно удалена!');
+      setSnackbarSeverity('success');
+      setSnackbarOpen(true);
       loadServicesForLocation(selectedLocationForFilter); 
     } catch (err: unknown) {
       if (err instanceof Error) {
-        setError(err.message);
+        setSnackbarMessage(err.message);
+        setSnackbarSeverity('error');
+        setSnackbarOpen(true);
       } else {
-        setError('Неизвестная ошибка');
+        setSnackbarMessage('Неизвестная ошибка');
+        setSnackbarSeverity('error');
+        setSnackbarOpen(true);
       }
     }
+  };
+
+  const handleOpenDialog = (serviceId: string) => {
+    setServiceToDeleteId(serviceId);
+    setOpenDialog(true);
+  };
+
+  const handleCloseDialog = () => {
+    setOpenDialog(false);
+    setServiceToDeleteId(null);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (serviceToDeleteId) {
+      await handleDelete(serviceToDeleteId);
+    }
+    handleCloseDialog();
   };
 
   const resetForm = () => {
@@ -160,7 +203,7 @@ export default function AdditionalServicesAdminPage() {
 
       {error && (
         <Box mb={2}>
-          <Alert severity="error">{error}</Alert>
+          <MuiAlert severity="error">{error}</MuiAlert>
         </Box>
       )}
 
@@ -268,7 +311,7 @@ export default function AdditionalServicesAdminPage() {
                           <EditIcon />
                         </IconButton>
                         <IconButton
-                          onClick={() => handleDelete(service.id)}
+                          onClick={() => handleOpenDialog(service.id)} 
                           color="error"
                           aria-label="удалить"
                         >
@@ -289,6 +332,37 @@ export default function AdditionalServicesAdminPage() {
           </Box>
         )}
       </Box>
+      
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={6000}
+        onClose={() => setSnackbarOpen(false)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert onClose={() => setSnackbarOpen(false)} severity={snackbarSeverity} sx={{ width: '100%' }}>
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
+
+      <Dialog
+        open={openDialog}
+        onClose={handleCloseDialog}
+      >
+        <DialogTitle>Подтверждение удаления</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Вы уверены, что хотите удалить эту услугу? Это действие нельзя отменить.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseDialog} color="primary">
+            Отмена
+          </Button>
+          <Button onClick={handleConfirmDelete} color="error" autoFocus>
+            Удалить
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Container>
   );
 }

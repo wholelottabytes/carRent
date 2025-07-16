@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Container,
   Box,
@@ -9,15 +9,22 @@ import {
   MenuItem,
   Typography,
   IconButton,
-  Alert,
+  Alert as MuiAlert,
+  AlertProps,
   Table,
   TableHead,
   TableBody,
   TableRow,
   TableCell,
   CircularProgress,
+  Snackbar,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
 } from '@mui/material';
-import { Add as AddIcon, Delete as DeleteIcon } from '@mui/icons-material';
+import { Delete as DeleteIcon } from '@mui/icons-material';
 import { fetcher } from '@/lib/fetcher';
 
 const transmissionOptions = ['Automatic', 'Manual', 'CVT', 'Semi-Auto'] as const;
@@ -26,9 +33,18 @@ const priceTypes = ['Hourly', 'Daily', 'TwoDays', 'Weekly'] as const;
 type Transmission = typeof transmissionOptions[number];
 type PriceType = typeof priceTypes[number];
 
-type PriceRow = {
-  priceType: PriceType;
-  price: number;
+const transmissionLabels: Record<Transmission, string> = {
+  Automatic: 'Автомат',
+  Manual: 'Механика',
+  CVT: 'Вариатор',
+  'Semi-Auto': 'Полуавтомат',
+};
+
+const priceLabels: Record<PriceType, string> = {
+  Hourly: 'Почасовая',
+  Daily: 'Суточная',
+  TwoDays: 'Двухсуточная',
+  Weekly: 'Недельная',
 };
 
 type FormErrorKeys =
@@ -51,6 +67,13 @@ type CarModelDto = {
   transmission: string;
 };
 
+const Alert = React.forwardRef<HTMLDivElement, AlertProps>(function Alert(
+  props,
+  ref,
+) {
+  return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
+});
+
 export default function CarModelsAdminPage() {
   const [form, setForm] = useState({
     make: '',
@@ -61,9 +84,12 @@ export default function CarModelsAdminPage() {
     fuelConsumptionPer100Km: 0,
   });
 
-  const [prices, setPrices] = useState<PriceRow[]>([
-    { priceType: 'Hourly', price: 0 },
-  ]);
+  const [prices, setPrices] = useState<Record<PriceType, number | null>>({
+    Hourly: null,
+    Daily: null,
+    TwoDays: null,
+    Weekly: null,
+  });
 
   const [files, setFiles] = useState<File[]>([]);
   const [errors, setErrors] = useState<FormErrors>({
@@ -81,29 +107,53 @@ export default function CarModelsAdminPage() {
   const [models, setModels] = useState<CarModelDto[]>([]);
   const [isLoadingModels, setIsLoadingModels] = useState(true);
 
-useEffect(() => {
-  fetcher('/api/CarModel/List')
-    .then(res => res.json())
-    .then(setModels)
-    .catch((err) => console.error('Ошибка загрузки моделей', err))
-    .finally(() => setIsLoadingModels(false));
-}, []);
+  // Состояние для Snackbar
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error' | 'warning' | 'info'>('success');
+  
+  // Состояние для Dialog
+  const [openDialog, setOpenDialog] = useState(false);
+  const [modelToDelete, setModelToDelete] = useState<string | null>(null);
 
-  const onAddPrice = () =>
-    setPrices((prev) => [...prev, { priceType: 'Hourly', price: 0 }]);
-
-  const onRemovePrice = (idx: number) =>
-    setPrices((prev) => prev.filter((_, i) => i !== idx));
+  useEffect(() => {
+    fetcher('/api/CarModel/List')
+      .then(res => res.json())
+      .then(setModels)
+      .catch((err) => console.error('Ошибка загрузки моделей', err))
+      .finally(() => setIsLoadingModels(false));
+  }, []);
 
   const deleteModel = async (id: string) => {
-    if (!confirm('Удалить эту модель?')) return;
     try {
       await fetcher(`/api/CarModel/Delete/${id}`, { method: 'DELETE' });
       setModels((prev) => prev.filter((m) => m.id !== id));
+      setSnackbarMessage('Модель успешно удалена!');
+      setSnackbarSeverity('success');
+      setSnackbarOpen(true);
     } catch (err) {
       console.error('Ошибка удаления модели:', err);
-      alert('Не удалось удалить модель');
+      setSnackbarMessage('Не удалось удалить модель.');
+      setSnackbarSeverity('error');
+      setSnackbarOpen(true);
     }
+  };
+
+  const handleOpenDialog = (id: string) => {
+    setModelToDelete(id);
+    setOpenDialog(true);
+  };
+
+  const handleCloseDialog = () => {
+    setOpenDialog(false);
+    setModelToDelete(null);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (modelToDelete) {
+      await deleteModel(modelToDelete);
+    }
+    handleCloseDialog();
   };
 
   const validate = () => {
@@ -145,24 +195,11 @@ useEffect(() => {
       isValid = false;
     }
 
-    if (prices.length === 0) {
-      newErrors.prices = 'Добавьте хотя бы одну цену';
+    if (!prices.Hourly || prices.Hourly <= 0) {
+      newErrors.prices = 'Почасовая цена обязательна и должна быть больше нуля';
       isValid = false;
-    } else {
-      for (let i = 0; i < prices.length; i++) {
-        if (prices[i].price <= 0) {
-          newErrors.prices = `Цена в строке ${i + 1} должна быть больше нуля`;
-          isValid = false;
-          break;
-        }
-        if (!priceTypes.includes(prices[i].priceType)) {
-          newErrors.prices = `Тип цены в строке ${i + 1} некорректен`;
-          isValid = false;
-          break;
-        }
-      }
     }
-
+    
     if (files.length === 0) {
       newErrors.files = 'Загрузите хотя бы одно фото';
       isValid = false;
@@ -176,9 +213,13 @@ useEffect(() => {
     setSubmitError(null);
     if (!validate()) return;
 
+    const rentalPrices = Object.entries(prices)
+      .filter(([, price]) => price !== null && price > 0)
+      .map(([priceType, price]) => ({ priceType, price }));
+
     const dto = {
       ...form,
-      RentalPrices: prices,
+      RentalPrices: rentalPrices,
     };
 
     const formData = new FormData();
@@ -190,12 +231,17 @@ useEffect(() => {
         method: 'POST',
         body: formData,
       });
-      alert('Модель успешно создана!');
+      setSnackbarMessage('Модель успешно создана!');
+      setSnackbarSeverity('success');
+      setSnackbarOpen(true);
       window.location.reload();
     } catch (err: unknown) {
       if (err instanceof Error) {
-      console.error('Ошибка при создании модели:', err);
-      setSubmitError(err.message || 'Произошла неизвестная ошибка, попробуйте позже');
+        console.error('Ошибка при создании модели:', err);
+        setSnackbarMessage(err.message || 'Произошла неизвестная ошибка, попробуйте позже');
+        setSnackbarSeverity('error');
+        setSnackbarOpen(true);
+        setSubmitError(err.message || 'Произошла неизвестная ошибка, попробуйте позже');
       }
     }
   };
@@ -209,14 +255,14 @@ useEffect(() => {
       {Object.values(errors).some((e) => e) && (
         <Box mb={2}>
           {Object.values(errors).map(
-            (e, i) => e && <Alert severity="error" key={i}>{e}</Alert>
+            (e, i) => e && <MuiAlert severity="error" key={i}>{e}</MuiAlert>
           )}
         </Box>
       )}
 
       {submitError && (
         <Box mb={2}>
-          <Alert severity="error">{submitError}</Alert>
+          <MuiAlert severity="error">{submitError}</MuiAlert>
         </Box>
       )}
 
@@ -282,7 +328,7 @@ useEffect(() => {
         >
           {transmissionOptions.map((v) => (
             <MenuItem key={v} value={v}>
-              {v}
+              {transmissionLabels[v]}
             </MenuItem>
           ))}
         </TextField>
@@ -320,11 +366,33 @@ useEffect(() => {
               hidden
               multiple
               type="file"
-              accept="image/*"
+              accept=".jpg, .jpeg, .png"
               onChange={(e) => {
                 if (!e.target.files) return;
+                
                 const newFiles = Array.from(e.target.files);
-                setFiles((prev) => [...prev, ...newFiles]);
+                const maxFileSize = 5 * 1024 * 1024;
+                const allowedExtensions = ['.jpg', '.jpeg', '.png'];
+                
+                const validFiles: File[] = [];
+
+                newFiles.forEach(file => {
+                  const fileExtension = file.name.split('.').pop()?.toLowerCase();
+                  
+                  if (!fileExtension || !allowedExtensions.includes(`.${fileExtension}`)) {
+                    setSnackbarMessage(`Файл "${file.name}" имеет недопустимый формат. Разрешены только JPG и PNG.`);
+                    setSnackbarSeverity('error');
+                    setSnackbarOpen(true);
+                  } else if (file.size > maxFileSize) {
+                    setSnackbarMessage(`Файл "${file.name}" слишком большой. Максимальный размер - 5 МБ.`);
+                    setSnackbarSeverity('error');
+                    setSnackbarOpen(true);
+                  } else {
+                    validFiles.push(file);
+                  }
+                });
+                
+                setFiles((prev) => [...prev, ...validFiles]);
               }}
             />
           </Button>
@@ -358,79 +426,29 @@ useEffect(() => {
           Цены
         </Typography>
 
-        {prices.map((p, i) => (
-          <Box
-            key={i}
-            sx={{
-              display: 'grid',
-              gap: 1,
-              gridTemplateColumns: 'repeat(12, 1fr)',
-              alignItems: 'center',
-              gridColumn: 'span 12',
-            }}
-          >
-            <TextField
-              select
-              label="Тип"
-              fullWidth
-              value={p.priceType}
-              onChange={(e) => {
-                const newType = e.target.value as PriceType;
-                setPrices((prev) =>
-                  prev.map((row, idx) =>
-                    idx === i ? { ...row, priceType: newType } : row
-                  )
-                );
-              }}
-              sx={{ gridColumn: 'span 4' }}
-              required
-            >
-              {priceTypes.map((v) => (
-                <MenuItem key={v} value={v}>
-                  {v}
-                </MenuItem>
-              ))}
-            </TextField>
-
-            <TextField
-              label="Цена"
-              type="number"
-              fullWidth
-              value={p.price}
-              onChange={(e) =>
-                setPrices((prev) =>
-                  prev.map((row, idx) =>
-                    idx === i ? { ...row, price: +e.target.value } : row
-                  )
-                )
-              }
-              sx={{ gridColumn: 'span 6' }}
-              required
-              inputProps={{ min: 0 }}
-            />
-
-            <IconButton
-              onClick={() => onRemovePrice(i)}
-              sx={{ gridColumn: 'span 2' }}
-            >
-              <DeleteIcon />
-            </IconButton>
-          </Box>
+        {priceTypes.map((type) => (
+          <TextField
+            key={type}
+            label={priceLabels[type]}
+            type="number"
+            fullWidth
+            value={prices[type] ?? ''}
+            onChange={(e) =>
+              setPrices((prev) => ({
+                ...prev,
+                [type]: +e.target.value,
+              }))
+            }
+            sx={{ gridColumn: 'span 6' }}
+            error={!!errors.prices && type === 'Hourly' && (!prices.Hourly || prices.Hourly <= 0)}
+            helperText={errors.prices && type === 'Hourly' && errors.prices}
+          />
         ))}
-
         {errors.prices && (
           <Typography color="error" sx={{ gridColumn: 'span 12' }}>
             {errors.prices}
           </Typography>
         )}
-
-        <Button
-          startIcon={<AddIcon />}
-          onClick={onAddPrice}
-          sx={{ gridColumn: 'span 12' }}
-        >
-          Добавить цену
-        </Button>
 
         <Box sx={{ gridColumn: 'span 12' }}>
           <Button variant="contained" type="submit" fullWidth>
@@ -439,7 +457,6 @@ useEffect(() => {
         </Box>
       </Box>
 
-      {/* Таблица моделей */}
       <Typography variant="h6" sx={{ mt: 4 }}>
         Существующие модели
       </Typography>
@@ -465,9 +482,9 @@ useEffect(() => {
                 <TableCell>{m.make}</TableCell>
                 <TableCell>{m.modelName}</TableCell>
                 <TableCell>{m.year}</TableCell>
-                <TableCell>{m.transmission}</TableCell>
+                <TableCell>{transmissionLabels[m.transmission as Transmission]}</TableCell>
                 <TableCell>
-                  <IconButton onClick={() => deleteModel(m.id)}>
+                  <IconButton onClick={() => handleOpenDialog(m.id)}>
                     <DeleteIcon />
                   </IconButton>
                 </TableCell>
@@ -476,6 +493,37 @@ useEffect(() => {
           </TableBody>
         </Table>
       )}
+
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={6000}
+        onClose={() => setSnackbarOpen(false)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert onClose={() => setSnackbarOpen(false)} severity={snackbarSeverity} sx={{ width: '100%' }}>
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
+
+      <Dialog
+        open={openDialog}
+        onClose={handleCloseDialog}
+      >
+        <DialogTitle>Подтверждение удаления</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Вы уверены, что хотите удалить эту модель? Это действие нельзя отменить.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseDialog} color="primary">
+            Отмена
+          </Button>
+          <Button onClick={handleConfirmDelete} color="error" autoFocus>
+            Удалить
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Container>
   );
 }

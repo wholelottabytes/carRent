@@ -1,6 +1,6 @@
 'use client';
-
-import { useEffect, useState } from 'react';
+import React from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import {
   Container,
   Typography,
@@ -11,10 +11,22 @@ import {
   Card,
   CardContent,
   Divider,
+  Snackbar,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  Alert as MuiAlert,
+  AlertProps,
 } from '@mui/material';
 import { useAppDispatch } from '@/lib/hooks';
 import { logout } from '@/features/auth/authSlice';
 import { fetcher } from '@/lib/fetcher';
+
+const Alert = React.forwardRef<HTMLDivElement, AlertProps>(function Alert(props, ref) {
+  return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
+});
 
 type Profile = {
   id: string;
@@ -46,24 +58,45 @@ export default function ProfilePage() {
 
   const [bookings, setBookings] = useState<BookingView[]>([]);
 
-  useEffect(() => {
-    fetcher('/api/Profile')
-      .then((r) => r.json())
-      .then((data: Profile) => {
-        setProfile(data);
-        setForm({
-          firstName: data.firstName ?? '',
-          lastName: data.lastName ?? '',
-          licenseNumber: data.licenseNumber ?? '',
-        });
-      })
-      .catch(console.error);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error' | 'warning' | 'info'>('success');
 
-    fetcher('/api/Booking/MyBookings')
-      .then((r) => r.json())
-      .then(setBookings)
-      .catch(console.error);
-  }, []);
+  const [openDialog, setOpenDialog] = useState(false);
+  const [bookingToCancelId, setBookingToCancelId] = useState<string | null>(null);
+
+  // Обернули showSnackbar в useCallback, так как он используется в loadData
+  const showSnackbar = useCallback(
+    (message: string, severity: 'success' | 'error') => {
+      setSnackbarMessage(message);
+      setSnackbarSeverity(severity);
+      setSnackbarOpen(true);
+    },
+    [setSnackbarMessage, setSnackbarSeverity, setSnackbarOpen]
+  );
+
+  const loadData = useCallback(async () => {
+    try {
+      const profileRes = await fetcher('/api/Profile');
+      const profileData: Profile = await profileRes.json();
+      setProfile(profileData);
+      setForm({
+        firstName: profileData.firstName ?? '',
+        lastName: profileData.lastName ?? '',
+        licenseNumber: profileData.licenseNumber ?? '',
+      });
+
+      const bookingsRes = await fetcher('/api/Booking/MyBookings');
+      const bookingsData: BookingView[] = await bookingsRes.json();
+      setBookings(bookingsData);
+    } catch {
+      showSnackbar('Ошибка загрузки данных профиля или бронирований', 'error');
+    }
+  }, [setProfile, setForm, setBookings, showSnackbar]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const onSave = async () => {
     try {
@@ -74,22 +107,37 @@ export default function ProfilePage() {
       const updated: Profile = await res.json();
       setProfile(updated);
       setEditMode(false);
-    } catch (e) {
-      console.error(e);
-      alert('Ошибка при сохранении профиля');
+      showSnackbar('Профиль успешно обновлен', 'success');
+    } catch {
+      showSnackbar('Ошибка при сохранении профиля', 'error');
     }
   };
 
   const cancelBooking = async (id: string) => {
-    if (!confirm('Вы уверены, что хотите отменить бронирование?')) return;
-
     try {
       await fetcher(`/api/Booking/Delete/${id}`, { method: 'DELETE' });
       setBookings((prev) => prev.filter((b) => b.id !== id));
-    } catch (e) {
-      console.error(e);
-      alert('Ошибка при отмене бронирования');
+      showSnackbar('Бронирование успешно отменено', 'success');
+    } catch {
+      showSnackbar('Ошибка при отмене бронирования', 'error');
     }
+  };
+
+  const handleOpenDialog = (id: string) => {
+    setBookingToCancelId(id);
+    setOpenDialog(true);
+  };
+
+  const handleCloseDialog = () => {
+    setOpenDialog(false);
+    setBookingToCancelId(null);
+  };
+
+  const handleConfirmCancel = async () => {
+    if (bookingToCancelId) {
+      await cancelBooking(bookingToCancelId);
+    }
+    handleCloseDialog();
   };
 
   if (!profile) return null;
@@ -207,7 +255,7 @@ export default function ProfilePage() {
                       color="error"
                       size="small"
                       sx={{ mt: 2 }}
-                      onClick={() => cancelBooking(b.id)}
+                      onClick={() => handleOpenDialog(b.id)}
                     >
                       Отменить
                     </Button>
@@ -218,6 +266,37 @@ export default function ProfilePage() {
           })}
         </Stack>
       )}
+
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={6000}
+        onClose={() => setSnackbarOpen(false)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert onClose={() => setSnackbarOpen(false)} severity={snackbarSeverity} sx={{ width: '100%' }}>
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
+
+      <Dialog
+        open={openDialog}
+        onClose={handleCloseDialog}
+      >
+        <DialogTitle>Подтверждение отмены</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Вы уверены, что хотите отменить это бронирование?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseDialog} color="primary">
+            Отмена
+          </Button>
+          <Button onClick={handleConfirmCancel} color="error" autoFocus>
+            Отменить бронирование
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Container>
   );
 }

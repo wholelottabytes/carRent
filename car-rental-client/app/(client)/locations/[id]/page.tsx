@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import {
   Container,
@@ -10,44 +10,61 @@ import {
   TextField,
   Button,
   IconButton,
+  Snackbar,
+  Alert as MuiAlert,
+  AlertProps,
 } from '@mui/material';
 import StarIcon from '@mui/icons-material/Star';
 import StarBorderIcon from '@mui/icons-material/StarBorder';
 import { useAppSelector } from '@/lib/hooks';
 import { fetcher } from '@/lib/fetcher';
 
+const Alert = React.forwardRef<HTMLDivElement, AlertProps>(function Alert(props, ref) {
+  return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
+});
+
 export default function LocationPage() {
   interface Location {
-  id: string;
-  city: string;
-  name: string;
-  address: string;
-}
+    id: string;
+    city: string;
+    name: string;
+    address: string;
+  }
 
-interface Review {
-  id?: string;
-  userId: string;
-  userName: string;
-  rating: number;
-  comment: string;
-}
+  interface Review {
+    id?: string;
+    userId: string;
+    userName: string;
+    rating: number;
+    comment: string;
+  }
+
   const { id } = useParams();
   const router = useRouter();
   const user = useAppSelector((state) => state.auth.user);
 
-const [location, setLocation] = useState<Location | null>(null);
-const [reviews, setReviews] = useState<Review[]>([]);
+  const [location, setLocation] = useState<Location | null>(null);
+  const [reviews, setReviews] = useState<Review[]>([]);
   const [comment, setComment] = useState('');
   const [rating, setRating] = useState(5);
-
-const [userReview, setUserReview] = useState<Review | null>(null);
-  const [notification, setNotification] = useState<string | null>(null);
+  const [userReview, setUserReview] = useState<Review | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error' | 'warning' | 'info'>('success');
+
+  const showSnackbar = (message: string, severity: 'success' | 'error' | 'warning' | 'info') => {
+    setSnackbarMessage(message);
+    setSnackbarSeverity(severity);
+    setSnackbarOpen(true);
+  };
 
   useEffect(() => {
     fetcher(`/api/RentalLocation/Get/${id}`)
       .then((r) => r.json())
-      .then(setLocation);
+      .then(setLocation)
+      .catch(() => showSnackbar('Ошибка загрузки локации.', 'error'));
 
     fetcher(`/api/Review/${id}?page=1&pageSize=20`)
       .then((r) => r.json())
@@ -60,15 +77,15 @@ const [userReview, setUserReview] = useState<Review | null>(null);
             setUserReview(existing);
             setComment(existing.comment);
             setRating(existing.rating);
-            setNotification('Вы уже оставляли отзыв — вы можете его отредактировать');
+            showSnackbar('Вы уже оставляли отзыв — вы можете его отредактировать.', 'info');
           } else {
             setUserReview(null);
             setComment('');
             setRating(5);
-            setNotification(null);
           }
         }
-      });
+      })
+      .catch(() => showSnackbar('Ошибка загрузки отзывов.', 'error'));
   }, [id, user]);
 
   const submitReview = async () => {
@@ -98,14 +115,20 @@ const [userReview, setUserReview] = useState<Review | null>(null);
 
       if (userReview) {
         setUserReview({ ...userReview, rating, comment });
-        setNotification('Отзыв успешно обновлен');
+        showSnackbar('Отзыв успешно обновлен.', 'success');
       } else {
-        setUserReview({ rating, comment, userId: user.id, userName: user.email });
-        setNotification('Отзыв успешно добавлен');
+        const newReview = data.reviews.find((r: Review) => r.userId === user.id);
+        if (newReview) {
+            setUserReview(newReview);
+        }
+        showSnackbar('Отзыв успешно добавлен.', 'success');
       }
-    } catch (err) {
-      setNotification('Ошибка при сохранении отзыва');
-      console.error(err);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        showSnackbar(`Ошибка при сохранении отзыва: ${err.message}`, 'error');
+      } else {
+        showSnackbar('Ошибка при сохранении отзыва.', 'error');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -174,12 +197,6 @@ const [userReview, setUserReview] = useState<Review | null>(null);
 
       <Typography variant="h6">Оставить отзыв</Typography>
 
-      {notification && (
-        <Typography color="primary" sx={{ mb: 2 }}>
-          {notification}
-        </Typography>
-      )}
-
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>{renderStars()}</Box>
 
       <TextField
@@ -195,6 +212,17 @@ const [userReview, setUserReview] = useState<Review | null>(null);
       <Button variant="contained" onClick={submitReview} disabled={isSubmitting}>
         {userReview ? 'Обновить отзыв' : 'Отправить'}
       </Button>
+
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={6000}
+        onClose={() => setSnackbarOpen(false)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert onClose={() => setSnackbarOpen(false)} severity={snackbarSeverity} sx={{ width: '100%' }}>
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </Container>
   );
 }

@@ -1,248 +1,64 @@
-'use client';
+import React from 'react';
+import ClientHomeWrapper from './(client)/ClientHomeWrapper';
+import type { CarModel, Photo, RentalLocationSimpleDto } from '@/types';
 
-import React, { useEffect, useState, useCallback } from 'react';
-import {
-  Container,
-  Box,
-  Typography,
-  TextField,
-  Button,
-  MenuItem,
-} from '@mui/material';
-import ModelCard from '@/components/ModelCard';
-import { fetcher } from '@/lib/fetcher';
-
-type Photo = {
-  id: string;
-  url: string;
-};
-
-type RentalLocationSimpleDto = {
-  id: string;
-  country: string;
-  city: string;
-  name: string;
-};
-
-type RentalPriceDto = {
-  id: string;
-  carModelId: string;
-  priceType: 'Hourly' | 'Daily' | 'TwoDays' | 'Weekly';
-  price: number;
-};
-
-interface AdditionalServiceDto {
-  id: string;
-  name: string;
-  price: number;
-  rentalLocationId: string;
-}
-
-interface RentalLocationWithServicesDto {
-  id: string;
-  name: string;
-  city: string;
-  address: string;
-  additionalServices?: AdditionalServiceDto[];
-}
-
-type CarModel = {
-  carModelId: string;
-  modelName: string;
-  make: string;
-  year: number;
-  transmission: string;
-  seatingCapacity: number;
-  fuelConsumptionPer100Km: number;
-  availableCarsCount: number;
-  rentalPrices?: RentalPriceDto[];
-  availableAtLocations?: RentalLocationWithServicesDto[];
-  photos?: Photo[];
-};
-
-interface CarModelApiResponse {
-  items: CarModel[];
-  totalCount?: number;
-}
-
-export default function HomePage() {
-  const [models, setModels] = useState<CarModel[]>([]);
-  const [locations, setLocations] = useState<RentalLocationSimpleDto[]>([]);
-  const [filters, setFilters] = useState({
-    country: '',
-    city: '',
-    startDate: '',
-    endDate: '',
-  });
-
+export default async function HomePage({ searchParams }: {
+  searchParams: Promise<{
+    country?: string;
+    city?: string;
+    startDate?: string;
+    endDate?: string;
+    page?: string;
+  }>;
+}) {
+  const paramsObj = await searchParams;
   const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL ?? '';
+  const page = paramsObj.page || '1';
 
-  useEffect(() => {
-    fetcher('/api/RentalLocation/ListSimple')
-      .then((res) => res.json() as Promise<RentalLocationSimpleDto[]>)
-      .then(setLocations)
-      .catch((e: unknown) => {
-        console.error('Ошибка при загрузке локаций:', e);
-        setLocations([]);
-      });
-  }, []);
+  const locationsRes = await fetch(`${apiBaseUrl}/api/RentalLocation/ListSimple`, {
+    cache: 'no-store',
+  });
+  const locations: RentalLocationSimpleDto[] = await locationsRes.json();
 
-  const loadModels = useCallback(async () => {
-    try {
-      const params = new URLSearchParams();
+  const params = new URLSearchParams();
+  if (paramsObj.country) params.append('Country', paramsObj.country);
+  if (paramsObj.city) params.append('City', paramsObj.city);
+  if (paramsObj.startDate) params.append('StartDate', paramsObj.startDate);
+  if (paramsObj.endDate) params.append('EndDate', paramsObj.endDate);
+  params.append('Page', page);
+  params.append('PageSize', '20');
 
-      if (filters.country) params.append('Country', filters.country);
-      if (filters.city) params.append('City', filters.city);
-      if (filters.startDate) params.append('StartDate', filters.startDate);
-      if (filters.endDate) params.append('EndDate', filters.endDate);
+  const modelsRes = await fetch(`${apiBaseUrl}/api/RentalLocation/SearchCarModels?${params.toString()}`, {
+    cache: 'no-store',
+  });
+  const data = await modelsRes.json();
 
-      params.append('Page', '1');
-      params.append('PageSize', '20');
-
-      const res = await fetcher(`/api/RentalLocation/SearchCarModels?${params.toString()}`);
-      const data: CarModelApiResponse = await res.json();
-
-      if (!Array.isArray(data.items)) {
-        setModels([]);
-        return;
+  const modelsWithPhotos: CarModel[] = await Promise.all(
+    data.items.map(async (model: CarModel) => {
+      try {
+        const photosRes = await fetch(`${apiBaseUrl}/api/CarImage/GetByCarId/${model.carModelId}`, {
+          cache: 'no-store',
+        });
+        const photos: Photo[] = await photosRes.json();
+        return {
+          ...model,
+          photos: photos.map((p) => ({
+            ...p,
+            url: p.url.startsWith('http') ? p.url : apiBaseUrl + p.url,
+          })),
+        };
+      } catch {
+        return { ...model, photos: [] };
       }
-
-      const modelsWithPhotos = await Promise.all(
-        data.items.map(async (model) => {
-          try {
-            const resPhotos = await fetcher(`/api/CarImage/GetByCarId/${model.carModelId}`);
-            const photos: Photo[] = await resPhotos.json();
-
-            const photosWithFullUrl = photos.map((p) => ({
-              ...p,
-              url: p.url.startsWith('http') ? p.url : apiBaseUrl + p.url,
-            }));
-
-            return { ...model, photos: photosWithFullUrl };
-          } catch (photoError: unknown) {
-            console.error(`Ошибка при загрузке фото для модели ${model.carModelId}:`, photoError);
-            return { ...model, photos: [] };
-          }
-        })
-      );
-
-      setModels(modelsWithPhotos);
-    } catch (error: unknown) {
-      console.error('Ошибка при загрузке моделей с фото:', error);
-      setModels([]);
-    }
-  }, [filters, apiBaseUrl]);
-
-  useEffect(() => {
-    loadModels();
-  }, [loadModels]);
-
-  const onFilterChange = (field: keyof typeof filters, value: string) => {
-    setFilters((f) => ({ ...f, [field]: value }));
-  };
-
-  const onApplyFilters = () => {
-    loadModels();
-  };
-
-  const filteredCities = filters.country
-    ? Array.from(
-        new Set(
-          locations
-            .filter((l) => l.country === filters.country)
-            .map((l) => l.city)
-        )
-      )
-    : [];
+    })
+  );
 
   return (
-    <Container sx={{ mt: 4 }}>
-      <Typography variant="h4" gutterBottom>
-        Доступные автомобили
-      </Typography>
-
-      <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap' }}>
-        <TextField
-          select
-          label="Страна"
-          value={filters.country}
-          onChange={(e) => onFilterChange('country', e.target.value)}
-          sx={{ minWidth: 140 }}
-          size="small"
-        >
-          <MenuItem value="">Все</MenuItem>
-          {Array.from(new Set(locations.map((l) => l.country))).map((country) => (
-            <MenuItem key={country} value={country}>
-              {country}
-            </MenuItem>
-          ))}
-        </TextField>
-
-        <TextField
-          select
-          label="Город"
-          value={filters.city}
-          onChange={(e) => onFilterChange('city', e.target.value)}
-          sx={{ minWidth: 140 }}
-          size="small"
-          disabled={!filters.country}
-        >
-          <MenuItem value="">Все</MenuItem>
-          {filteredCities.map((city) => (
-            <MenuItem key={city} value={city}>
-              {city}
-            </MenuItem>
-          ))}
-        </TextField>
-
-        <TextField
-          label="Дата начала"
-          type="datetime-local"
-          value={filters.startDate}
-          onChange={(e) => onFilterChange('startDate', e.target.value)}
-          InputLabelProps={{ shrink: true }}
-          size="small"
-        />
-
-        <TextField
-          label="Дата окончания"
-          type="datetime-local"
-          value={filters.endDate}
-          onChange={(e) => onFilterChange('endDate', e.target.value)}
-          InputLabelProps={{ shrink: true }}
-          size="small"
-        />
-
-        <Button variant="contained" onClick={onApplyFilters} sx={{ height: 40 }}>
-          Применить
-        </Button>
-      </Box>
-
-      <Box
-        sx={{
-          display: 'grid',
-          gap: 3,
-          gridTemplateColumns: {
-            xs: '1fr',
-            sm: '1fr 1fr',
-            md: '1fr 1fr 1fr',
-            lg: '1fr 1fr 1fr 1fr',
-          },
-        }}
-      >
-        {models.length === 0 && (
-          <Typography
-            variant="body1"
-            color="text.secondary"
-            sx={{ gridColumn: '1/-1', textAlign: 'center' }}
-          >
-            Нет доступных моделей по заданным фильтрам.
-          </Typography>
-        )}
-        {models.map((m) => (
-          <ModelCard key={m.carModelId} model={m} />
-        ))}
-      </Box>
-    </Container>
+    <ClientHomeWrapper
+      locations={locations}
+      modelsWithPhotos={modelsWithPhotos}
+      totalPages={data.totalPages}
+      currentPage={parseInt(page)}
+    />
   );
 }

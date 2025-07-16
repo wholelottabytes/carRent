@@ -8,6 +8,7 @@ namespace WebApplication1.Common.DTOs
         public string ModelName { get; set; } = null!;
         public string Make { get; set; } = null!;
         public bool IsEnabled { get; set; }
+        public Guid CarModelId { get; set; } 
     }
 
     public class CarDto

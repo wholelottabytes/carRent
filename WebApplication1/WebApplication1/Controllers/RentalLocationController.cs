@@ -41,7 +41,8 @@ public class RentalLocationController : ControllerBase
                 Id = c.Id,
                 ModelName = c.CarModel?.ModelName ?? "Unknown",
                 Make = c.CarModel?.Make ?? "Unknown",    
-                IsEnabled = c.IsEnabled
+                IsEnabled = c.IsEnabled,
+                CarModelId = c.CarModelId 
             }).ToList() ?? new List<CarDtoLocation>()
         };
 
@@ -82,7 +83,8 @@ public class RentalLocationController : ControllerBase
                 Id = c.Id,
                 ModelName = c.CarModel?.ModelName ?? "Unknown",
                 Make = c.CarModel?.Make ?? "Unknown",  
-                IsEnabled = c.IsEnabled
+                IsEnabled = c.IsEnabled,
+                CarModelId = c.CarModelId 
             }).ToList() ?? new List<CarDtoLocation>()
         });
 

@@ -30,6 +30,13 @@ public class RentalLocationService : IRentalLocationService
     public async Task<RentalLocation> GetByIdAsync(Guid id)
         => await _rentalLocationRepository.GetByIdAsync(id)
            ?? throw new EntityNotFoundException(nameof(RentalLocation), id);
+
+    public async Task<RentalLocation> GetByIdPagedAsync(Guid id, int page, int pageSize)
+    {
+        var loc = await _rentalLocationRepository.GetByIdPagedAsync(id, page, pageSize)
+                  ?? throw new EntityNotFoundException(nameof(RentalLocation), id);
+        return loc;
+    }
     public async Task<IEnumerable<RentalLocationSimpleDto>> ListSimpleAsync()
     {
         var locations = await _rentalLocationRepository.ListAsync();
@@ -60,10 +67,28 @@ public class RentalLocationService : IRentalLocationService
 
     public async Task DeleteAsync(Guid id)
     {
-        var loc = await _rentalLocationRepository.GetByIdAsync(id)
-                  ?? throw new EntityNotFoundException(nameof(RentalLocation), id);
+        var location = await _rentalLocationRepository.GetByIdAsync(id)
+                       ?? throw new EntityNotFoundException(nameof(RentalLocation), id);
 
-        await _rentalLocationRepository.SoftDeleteAsync(loc);
+        await _rentalLocationRepository.SoftDeleteAsync(location);
+    }
+
+    public async Task RestoreAsync(Guid id)
+    {
+        await _rentalLocationRepository.RestoreAsync(id);
+    }
+    
+    public async Task<PagedResult<RentalLocationSimpleDto>> SearchDeletedPagedAsync(LocationSearchParams searchParams)
+    {
+        var (items, totalCount) = await _rentalLocationRepository.SearchDeletedAsync(searchParams);
+
+        return new PagedResult<RentalLocationSimpleDto>
+        {
+            Items = items,
+            TotalCount = totalCount,
+            Page = searchParams.Page,
+            PageSize = searchParams.PageSize
+        };
     }
 
     public async Task<PagedResult<CarModelSummaryDto>> SearchCarModelsPagedAsync(CarModelSearchParams searchParams)
@@ -76,6 +101,17 @@ public class RentalLocationService : IRentalLocationService
 
         var (items, totalCount) = await _rentalLocationRepository.SearchCarModelsAsync(searchParams);
         return new PagedResult<CarModelSummaryDto>
+        {
+            Items = items,
+            TotalCount = totalCount,
+            Page = searchParams.Page,
+            PageSize = searchParams.PageSize
+        };
+    }
+    public async Task<PagedResult<RentalLocationSimpleDto>> SearchPagedAsync(LocationSearchParams searchParams)
+    {
+        var (items, totalCount) = await _rentalLocationRepository.SearchAsync(searchParams);
+        return new PagedResult<RentalLocationSimpleDto>
         {
             Items = items,
             TotalCount = totalCount,

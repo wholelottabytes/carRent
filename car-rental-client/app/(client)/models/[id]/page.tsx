@@ -8,6 +8,8 @@ import {
   CardContent,
   Divider,
   Button,
+  Dialog,
+  IconButton,
 } from '@mui/material';
 import { useParams, useRouter } from 'next/navigation';
 import { useSelector } from 'react-redux';
@@ -23,6 +25,10 @@ import { Navigation, Pagination, A11y } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
+
+import CloseIcon from '@mui/icons-material/Close';
+import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
+import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 
 const priceLabels: Record<string, string> = {
   Hourly: 'BYN / час',
@@ -81,8 +87,10 @@ export default function CarModelDetailsPage() {
   ) as SelectedCarModel | null;
 
   const [photos, setPhotos] = useState<Photo[]>([]);
-
   const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL ?? '';
+
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewIndex, setPreviewIndex] = useState(0);
 
   useEffect(() => {
     if (model?.carModelId) {
@@ -161,6 +169,19 @@ export default function CarModelDetailsPage() {
     }
   };
 
+  const openPreview = (index: number) => {
+    setPreviewIndex(index);
+    setPreviewOpen(true);
+  };
+
+  const prevPreview = () => {
+    setPreviewIndex((prev) => (prev === 0 ? photos.length - 1 : prev - 1));
+  };
+
+  const nextPreview = () => {
+    setPreviewIndex((prev) => (prev === photos.length - 1 ? 0 : prev + 1));
+  };
+
   return (
     <Container sx={{ mt: 4 }}>
       <Typography variant="h4" gutterBottom>
@@ -185,7 +206,7 @@ export default function CarModelDetailsPage() {
                 slidesPerView={1}
                 style={{ height: '300px', width: '100%' }}
               >
-                {photos.map((photo) => (
+                {photos.map((photo, index) => (
                   <SwiperSlide
                     key={photo.id}
                     style={{
@@ -193,12 +214,14 @@ export default function CarModelDetailsPage() {
                       display: 'flex',
                       justifyContent: 'center',
                       alignItems: 'center',
+                      cursor: 'pointer',
                     }}
+                    onClick={() => openPreview(index)}
                   >
                     <Image
                       src={photo.url}
                       alt={`${make} ${modelName}`}
-                      width={600}  
+                      width={600}
                       height={300}
                       style={{
                         objectFit: 'cover',
@@ -210,6 +233,41 @@ export default function CarModelDetailsPage() {
                   </SwiperSlide>
                 ))}
               </Swiper>
+            </Box>
+
+            {/* Превью под слайдером */}
+            <Box
+              sx={{
+                mt: 1,
+                display: 'flex',
+                justifyContent: 'center',
+                gap: 1,
+                overflowX: 'auto',
+                padding: '0 8px',
+              }}
+            >
+              {photos.map((photo, idx) => (
+                <Box
+                  key={photo.id}
+                  sx={{
+                    cursor: 'pointer',
+                    border:
+                      idx === previewIndex ? '2px solid #1976d2' : '2px solid transparent',
+                    borderRadius: 1,
+                    flexShrink: 0,
+                  }}
+                  onClick={() => openPreview(idx)}
+                >
+                  <Image
+                    src={photo.url}
+                    alt={`Preview ${make} ${modelName}`}
+                    width={80}
+                    height={50}
+                    style={{ objectFit: 'cover', display: 'block', borderRadius: 4 }}
+                    unoptimized
+                  />
+                </Box>
+              ))}
             </Box>
           </Card>
         </Box>
@@ -311,6 +369,51 @@ export default function CarModelDetailsPage() {
           <Typography color="text.secondary">Нет доступных локаций</Typography>
         )}
       </Box>
+
+      <Dialog open={previewOpen} onClose={() => setPreviewOpen(false)} maxWidth="md" fullWidth>
+        <Box
+          sx={{
+            position: 'relative',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            bgcolor: 'background.paper',
+          }}
+        >
+          <IconButton
+            onClick={() => setPreviewOpen(false)}
+            sx={{ position: 'absolute', top: 8, right: 8, color: 'grey.700' }}
+            aria-label="close"
+          >
+            <CloseIcon />
+          </IconButton>
+
+          <IconButton
+            onClick={prevPreview}
+            sx={{ position: 'absolute', left: 8, color: 'grey.700' }}
+            aria-label="previous"
+          >
+            <ArrowBackIosNewIcon />
+          </IconButton>
+
+          <Image
+            src={photos[previewIndex]?.url || ''}
+            alt={`${make} ${modelName} preview`}
+            width={800}
+            height={500}
+            style={{ objectFit: 'contain', maxHeight: '80vh', margin: 'auto' }}
+            unoptimized
+          />
+
+          <IconButton
+            onClick={nextPreview}
+            sx={{ position: 'absolute', right: 8, color: 'grey.700' }}
+            aria-label="next"
+          >
+            <ArrowForwardIosIcon />
+          </IconButton>
+        </Box>
+      </Dialog>
     </Container>
   );
 }

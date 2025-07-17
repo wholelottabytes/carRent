@@ -60,5 +60,18 @@ namespace WebApplication1.API.Controllers
             var result = await _carModelService.CreateFullAsync(dto, files);
             return CreatedAtAction(nameof(Get), new { id = result.Id }, result);
         }
+        [HttpGet]
+        public async Task<IActionResult> Search([FromQuery] CarModelSearchParamsModel searchParams)
+        {
+            var pagedResult = await _carModelService.SearchPagedAsync(searchParams);
+            return Ok(new
+            {
+                pagedResult.Page,
+                pagedResult.PageSize,
+                TotalCount = pagedResult.TotalCount,
+                Items = pagedResult.Items
+            });
+        }
     }
+    
 }

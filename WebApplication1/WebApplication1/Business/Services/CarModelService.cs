@@ -87,6 +87,18 @@ public class CarModelService : ICarModelService
         var saved = await _carModelRepository.AddFullModelAsync(model, prices, files.ToList(), _environment);
         return DtoMapper.ToDto(saved);
     }
-
+    public async Task<PagedResult<CarModelDto>> SearchPagedAsync(CarModelSearchParamsModel searchParams)
+    {
+        var (items, totalCount) = await _carModelRepository.SearchAsync(searchParams);
+        return new PagedResult<CarModelDto>
+        {
+            Items = items,
+            TotalCount = totalCount,
+            Page = searchParams.Page,
+            PageSize = searchParams.PageSize
+        };
+    }
+    
+    
 
 }

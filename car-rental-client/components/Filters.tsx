@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { Box, TextField, Button, MenuItem } from '@mui/material';
+import React, { useState, useEffect, useTransition } from 'react';
+import { Box, TextField, Button, MenuItem, CircularProgress } from '@mui/material';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 type RentalLocationSimpleDto = {
@@ -11,9 +11,16 @@ type RentalLocationSimpleDto = {
   name: string;
 };
 
-export default function Filters({ locations }: { locations: RentalLocationSimpleDto[] }) {
+export default function Filters({
+  locations,
+  setLoading,
+}: {
+  locations: RentalLocationSimpleDto[];
+  setLoading: (val: boolean) => void;
+}) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [isPending, startTransition] = useTransition();
 
   const [country, setCountry] = useState('');
   const [city, setCity] = useState('');
@@ -25,7 +32,7 @@ export default function Filters({ locations }: { locations: RentalLocationSimple
     setCity(searchParams.get('city') ?? '');
     setStartDate(searchParams.get('startDate') ?? '');
     setEndDate(searchParams.get('endDate') ?? '');
-  }, [searchParams]); 
+  }, [searchParams]);
 
   useEffect(() => {
     setCity('');
@@ -41,12 +48,16 @@ export default function Filters({ locations }: { locations: RentalLocationSimple
     if (city) params.set('city', city);
     if (startDate) params.set('startDate', startDate);
     if (endDate) params.set('endDate', endDate);
+    params.set('page', '1'); // сброс на первую страницу
 
-    router.push(`/?${params.toString()}`);
+    setLoading(true);
+    startTransition(() => {
+      router.push(`/?${params.toString()}`);
+    });
   };
 
   return (
-    <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap' }}>
+    <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap', alignItems: 'center' }}>
       <TextField
         select
         label="Страна"
@@ -98,8 +109,13 @@ export default function Filters({ locations }: { locations: RentalLocationSimple
         size="small"
       />
 
-      <Button variant="contained" onClick={onApplyFilters} sx={{ height: 40 }}>
-        Применить
+      <Button
+        variant="contained"
+        onClick={onApplyFilters}
+        sx={{ height: 40, minWidth: 140 }}
+        disabled={isPending}
+      >
+        {isPending ? <CircularProgress size={20} color="inherit" /> : 'Применить'}
       </Button>
     </Box>
   );

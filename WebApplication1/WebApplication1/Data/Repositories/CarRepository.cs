@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using WebApplication1.Common.DTOs;
 using WebApplication1.Data.Context;
 using WebApplication1.Data.Models;
 
@@ -86,5 +87,64 @@ namespace WebApplication1.Data.Repositories
     var carsListForDebug = await baseQuery.ToListAsync();
     return carsListForDebug.FirstOrDefault();
 }
+     
+     
+      public async Task<(IEnumerable<RentalLocation> Items, int TotalCount)> SearchAsync(CarSearchParams searchParams)
+    {
+        var query = _context.RentalLocations
+            .Include(r => r.Cars.Where(c => !c.IsDeleted))
+            .ThenInclude(c => c.CarModel)
+            .Where(r => !r.IsDeleted);
+
+        if (!string.IsNullOrWhiteSpace(searchParams.SearchQuery))
+        {
+            var search = searchParams.SearchQuery.Trim().ToLower();
+            query = query.Where(r =>
+                r.Cars.Any(c =>
+                    c.CarModel.Make.ToLower().Contains(search) ||
+                    c.CarModel.ModelName.ToLower().Contains(search)) ||
+                r.City.ToLower().Contains(search) ||
+                r.Name.ToLower().Contains(search) ||
+                r.Address.ToLower().Contains(search));
+        }
+
+        var totalCount = await query.CountAsync();
+
+        var items = await query
+            .AsNoTracking()
+            .OrderBy(r => r.City)
+            .ThenBy(r => r.Name)
+            .Skip((searchParams.Page - 1) * searchParams.PageSize)
+            .Take(searchParams.PageSize)
+            .Select(r => new RentalLocation
+            {
+                Id = r.Id,
+                Country = r.Country,
+                City = r.City,
+                Name = r.Name,
+                Address = r.Address,
+                Cars = r.Cars.Select(c => new Car
+                {
+                    Id = c.Id,
+                    CarModelId = c.CarModelId,
+                    RentalLocationId = c.RentalLocationId,
+                    IsEnabled = c.IsEnabled,
+                    CarModel = new CarModel
+                    {
+                        Id = c.CarModel.Id,
+                        Make = c.CarModel.Make,
+                        ModelName = c.CarModel.ModelName,
+                        Year = c.CarModel.Year,
+                        Transmission = c.CarModel.Transmission,
+                        SeatingCapacity = c.CarModel.SeatingCapacity,
+                        FuelConsumptionPer100Km = c.CarModel.FuelConsumptionPer100Km
+                    }
+                }).ToList()
+            })
+            .ToListAsync();
+
+        return (items, totalCount);
     }
+    }
+    
 }

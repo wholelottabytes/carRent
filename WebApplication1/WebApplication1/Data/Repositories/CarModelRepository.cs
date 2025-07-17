@@ -21,6 +21,7 @@ public class CarModelRepository : ICarModelRepository
     {
         return await _context.CarModels
             .Include(m => m.Cars.Where(c => !c.IsDeleted))
+            .Include(m => m.RentalPrices)  
             .FirstOrDefaultAsync(m => m.Id == id && !m.IsDeleted);
     }
 
@@ -95,5 +96,40 @@ public class CarModelRepository : ICarModelRepository
             throw;
         }
     }
+    public async Task<(IEnumerable<CarModelDto> Items, int TotalCount)> SearchAsync(CarModelSearchParamsModel searchParams)
+    {
+        var query = _context.CarModels
+            .Include(m => m.Cars.Where(c => !c.IsDeleted))
+            .Where(m => !m.IsDeleted);
 
+        if (!string.IsNullOrWhiteSpace(searchParams.SearchQuery))
+        {
+            var search = searchParams.SearchQuery.Trim().ToLower();
+            query = query.Where(m =>
+                m.Make.ToLower().Contains(search) ||
+                m.ModelName.ToLower().Contains(search));
+        }
+
+        var totalCount = await query.CountAsync();
+
+        var items = await query
+            .AsNoTracking()
+            .OrderBy(m => m.Make)
+            .ThenBy(m => m.ModelName)
+            .Skip((searchParams.Page - 1) * searchParams.PageSize)
+            .Take(searchParams.PageSize)
+            .Select(m => new CarModelDto
+            {
+                Id = m.Id,
+                Make = m.Make,
+                ModelName = m.ModelName,
+                Year = m.Year,
+                Transmission = m.Transmission,
+                SeatingCapacity = m.SeatingCapacity,
+                FuelConsumptionPer100Km = m.FuelConsumptionPer100Km
+            })
+            .ToListAsync();
+
+        return (items, totalCount);
+    }
 }

@@ -36,5 +36,10 @@ namespace WebApplication1.Common.DTOs
         
         public string Address { get; set; } = null!;
     }
-
+    public class LocationSearchParams
+    {
+        public string? SearchQuery { get; set; }
+        public int Page { get; set; } = 1;
+        public int PageSize { get; set; } = 10;
+    }
 }

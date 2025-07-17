@@ -40,4 +40,11 @@ namespace WebApplication1.Common.DTOs
     {
         public bool? IsEnabled { get; set; }
     }
+    
+    public class CarSearchParams
+    {
+        public string? SearchQuery { get; set; }
+        public int Page { get; set; } = 1;
+        public int PageSize { get; set; } = 10;
+    }
 }

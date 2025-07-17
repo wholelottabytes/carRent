@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Container,
   Box,
@@ -23,6 +23,7 @@ import {
   DialogContent,
   DialogContentText,
   DialogTitle,
+  TablePagination,
 } from '@mui/material';
 import { Delete as DeleteIcon } from '@mui/icons-material';
 import { fetcher } from '@/lib/fetcher';
@@ -67,10 +68,26 @@ type CarModelDto = {
   transmission: string;
 };
 
-const Alert = React.forwardRef<HTMLDivElement, AlertProps>(function Alert(
-  props,
-  ref,
-) {
+type Photo = { id: string; url: string };
+type RentalPriceDto = { id: string; priceType: string; price: number };
+type CarModelDetailDto = {
+  id: string;
+  make: string;
+  modelName: string;
+  year: number;
+  transmission: string;
+  seatingCapacity: number;
+  fuelConsumptionPer100Km: number;
+};
+
+interface PagedResult<T> {
+  items: T[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+}
+
+const Alert = React.forwardRef<HTMLDivElement, AlertProps>(function Alert(props, ref) {
   return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
 });
 
@@ -105,34 +122,66 @@ export default function CarModelsAdminPage() {
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   const [models, setModels] = useState<CarModelDto[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
+  const [searchQuery, setSearchQuery] = useState('');
   const [isLoadingModels, setIsLoadingModels] = useState(true);
 
-  // Состояние для Snackbar
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error' | 'warning' | 'info'>('success');
-  
-  // Состояние для Dialog
+
   const [openDialog, setOpenDialog] = useState(false);
   const [modelToDelete, setModelToDelete] = useState<string | null>(null);
 
+  const [selectedModelId, setSelectedModelId] = useState<string | null>(null);
+  const [selectedModelData, setSelectedModelData] = useState<{
+    detail: CarModelDetailDto | null;
+    photos: Photo[];
+    rentalPrices: RentalPriceDto[];
+    loading: boolean;
+    error: string | null;
+  }>({
+    detail: null,
+    photos: [],
+    rentalPrices: [],
+    loading: false,
+    error: null,
+  });
+
+  const loadModels = useCallback(async () => {
+    try {
+      setIsLoadingModels(true);
+      const res = await fetcher(
+        `/api/CarModel/Search?searchQuery=${encodeURIComponent(searchQuery)}&page=${page + 1}&pageSize=${pageSize}`
+      );
+      const data: PagedResult<CarModelDto> = await res.json();
+      setModels(data.items);
+      setTotalCount(data.totalCount);
+    } catch {
+      setSnackbarMessage('Ошибка загрузки списка моделей.');
+      setSnackbarSeverity('error');
+      setSnackbarOpen(true);
+      setModels([]);
+      setTotalCount(0);
+    } finally {
+      setIsLoadingModels(false);
+    }
+  }, [searchQuery, page, pageSize]);
+
   useEffect(() => {
-    fetcher('/api/CarModel/List')
-      .then(res => res.json())
-      .then(setModels)
-      .catch((err) => console.error('Ошибка загрузки моделей', err))
-      .finally(() => setIsLoadingModels(false));
-  }, []);
+    loadModels();
+  }, [loadModels]);
 
   const deleteModel = async (id: string) => {
     try {
       await fetcher(`/api/CarModel/Delete/${id}`, { method: 'DELETE' });
-      setModels((prev) => prev.filter((m) => m.id !== id));
       setSnackbarMessage('Модель успешно удалена!');
       setSnackbarSeverity('success');
       setSnackbarOpen(true);
-    } catch (err) {
-      console.error('Ошибка удаления модели:', err);
+      loadModels();
+    } catch {
       setSnackbarMessage('Не удалось удалить модель.');
       setSnackbarSeverity('error');
       setSnackbarOpen(true);
@@ -154,6 +203,15 @@ export default function CarModelsAdminPage() {
       await deleteModel(modelToDelete);
     }
     handleCloseDialog();
+  };
+
+  const handlePageChange = (event: unknown, newPage: number) => {
+    setPage(newPage);
+  };
+
+  const handlePageSizeChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setPageSize(parseInt(event.target.value, 10));
+    setPage(0);
   };
 
   const validate = () => {
@@ -194,12 +252,10 @@ export default function CarModelsAdminPage() {
       newErrors.fuelConsumptionPer100Km = 'Расход топлива не может быть отрицательным';
       isValid = false;
     }
-
     if (!prices.Hourly || prices.Hourly <= 0) {
       newErrors.prices = 'Почасовая цена обязательна и должна быть больше нуля';
       isValid = false;
     }
-    
     if (files.length === 0) {
       newErrors.files = 'Загрузите хотя бы одно фото';
       isValid = false;
@@ -234,16 +290,67 @@ export default function CarModelsAdminPage() {
       setSnackbarMessage('Модель успешно создана!');
       setSnackbarSeverity('success');
       setSnackbarOpen(true);
-      window.location.reload();
+      setForm({
+        make: '',
+        modelName: '',
+        year: new Date().getFullYear(),
+        transmission: 'Automatic',
+        seatingCapacity: 4,
+        fuelConsumptionPer100Km: 0,
+      });
+      setPrices({ Hourly: null, Daily: null, TwoDays: null, Weekly: null });
+      setFiles([]);
+      loadModels();
     } catch (err: unknown) {
       if (err instanceof Error) {
-        console.error('Ошибка при создании модели:', err);
         setSnackbarMessage(err.message || 'Произошла неизвестная ошибка, попробуйте позже');
         setSnackbarSeverity('error');
         setSnackbarOpen(true);
         setSubmitError(err.message || 'Произошла неизвестная ошибка, попробуйте позже');
       }
     }
+  };
+
+  const openModelModal = async (id: string) => {
+  setSelectedModelId(id);
+  setSelectedModelData({ detail: null, photos: [], rentalPrices: [], loading: true, error: null });
+
+  try {
+    const [detailRes, photosRes] = await Promise.all([
+      fetcher(`/api/CarModel/Get/${id}`),
+      fetcher(`/api/CarImage/GetByCarId/${id}`),
+    ]);
+    const detailJson = await detailRes.json();
+    const photosJson = await photosRes.json();
+
+    setSelectedModelData({
+      detail: detailJson,
+      photos: photosJson,
+      rentalPrices: detailJson.rentalPrices ?? [], 
+      loading: false,
+      error: null,
+    });
+  } catch {
+    setSelectedModelData({
+      detail: null,
+      photos: [],
+      rentalPrices: [],
+      loading: false,
+      error: 'Ошибка загрузки данных модели',
+    });
+  }
+};
+
+
+  const closeModelModal = () => {
+    setSelectedModelId(null);
+    setSelectedModelData({
+      detail: null,
+      photos: [],
+      rentalPrices: [],
+      loading: false,
+      error: null,
+    });
   };
 
   return (
@@ -254,9 +361,7 @@ export default function CarModelsAdminPage() {
 
       {Object.values(errors).some((e) => e) && (
         <Box mb={2}>
-          {Object.values(errors).map(
-            (e, i) => e && <MuiAlert severity="error" key={i}>{e}</MuiAlert>
-          )}
+          {Object.values(errors).map((e, i) => e && <MuiAlert severity="error" key={i}>{e}</MuiAlert>)}
         </Box>
       )}
 
@@ -369,104 +474,80 @@ export default function CarModelsAdminPage() {
               accept=".jpg, .jpeg, .png"
               onChange={(e) => {
                 if (!e.target.files) return;
-                
                 const newFiles = Array.from(e.target.files);
                 const maxFileSize = 5 * 1024 * 1024;
                 const allowedExtensions = ['.jpg', '.jpeg', '.png'];
-                
                 const validFiles: File[] = [];
-
                 newFiles.forEach(file => {
-                  const fileExtension = file.name.split('.').pop()?.toLowerCase();
-                  
-                  if (!fileExtension || !allowedExtensions.includes(`.${fileExtension}`)) {
-                    setSnackbarMessage(`Файл "${file.name}" имеет недопустимый формат. Разрешены только JPG и PNG.`);
+                  const ext = file.name.split('.').pop()?.toLowerCase();
+                  if (!ext || !allowedExtensions.includes(`.${ext}`)) {
+                    setSnackbarMessage(`Файл "${file.name}" имеет недопустимый формат. Разрешены JPG и PNG.`);
                     setSnackbarSeverity('error');
                     setSnackbarOpen(true);
                   } else if (file.size > maxFileSize) {
-                    setSnackbarMessage(`Файл "${file.name}" слишком большой. Максимальный размер - 5 МБ.`);
+                    setSnackbarMessage(`Файл "${file.name}" слишком большой. Максимум 5 МБ.`);
                     setSnackbarSeverity('error');
                     setSnackbarOpen(true);
                   } else {
                     validFiles.push(file);
                   }
                 });
-                
-                setFiles((prev) => [...prev, ...validFiles]);
+                setFiles(prev => [...prev, ...validFiles]);
               }}
             />
           </Button>
           {errors.files && <Typography color="error">{errors.files}</Typography>}
-          <Box mt={1}>
-            {files.map((f, idx) => (
-              <Box
-                key={f.name + idx}
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  border: '1px solid #ccc',
-                  borderRadius: 1,
-                  padding: 1,
-                  mb: 1,
-                }}
-              >
-                <Typography sx={{ maxWidth: '70%', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  {f.name}
-                </Typography>
-                <IconButton onClick={() => setFiles((prev) => prev.filter((_, i) => i !== idx))}>
-                  <DeleteIcon />
-                </IconButton>
-              </Box>
-            ))}
-          </Box>
+          {files.length > 0 && (
+            <Box mt={1} sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+              {files.map((file, i) => (
+                <Typography key={i} variant="body2">{file.name}</Typography>
+              ))}
+            </Box>
+          )}
         </Box>
 
-        <Typography variant="h6" sx={{ gridColumn: 'span 12' }}>
-          Цены
-        </Typography>
-
-        {priceTypes.map((type) => (
-          <TextField
-            key={type}
-            label={priceLabels[type]}
-            type="number"
-            fullWidth
-            value={prices[type] ?? ''}
-            onChange={(e) =>
-              setPrices((prev) => ({
-                ...prev,
-                [type]: +e.target.value,
-              }))
-            }
-            sx={{ gridColumn: 'span 6' }}
-            error={!!errors.prices && type === 'Hourly' && (!prices.Hourly || prices.Hourly <= 0)}
-            helperText={errors.prices && type === 'Hourly' && errors.prices}
-          />
-        ))}
-        {errors.prices && (
-          <Typography color="error" sx={{ gridColumn: 'span 12' }}>
-            {errors.prices}
+        <Box sx={{ gridColumn: 'span 6' }}>
+          <Typography variant="subtitle1" gutterBottom>
+            Цены аренды
           </Typography>
-        )}
+          {priceTypes.map(type => (
+            <TextField
+              key={type}
+              label={priceLabels[type]}
+              type="number"
+              fullWidth
+              value={prices[type] ?? ''}
+              onChange={e =>
+                setPrices(p => ({
+                  ...p,
+                  [type]: e.target.value === '' ? null : +e.target.value,
+                }))
+              }
+              sx={{ mb: 1 }}
+              error={!!errors.prices && !prices[type]}
+              helperText={type === 'Hourly' && errors.prices}
+            />
+          ))}
+        </Box>
 
         <Box sx={{ gridColumn: 'span 12' }}>
-          <Button variant="contained" type="submit" fullWidth>
-            Сохранить модель
+          <Button type="submit" variant="contained" fullWidth>
+            Добавить модель
           </Button>
         </Box>
       </Box>
 
-      <Typography variant="h6" sx={{ mt: 4 }}>
-        Существующие модели
-      </Typography>
+      <Box mt={4}>
+        <TextField
+          label="Поиск"
+          fullWidth
+          value={searchQuery}
+          onChange={e => setSearchQuery(e.target.value)}
+        />
+      </Box>
 
-      {isLoadingModels ? (
-        <CircularProgress />
-      ) : models.length === 0 ? (
-        <Typography>Модели не найдены</Typography>
-      ) : (
-        <Table sx={{ mt: 2 }}>
+      <Box mt={2}>
+        <Table>
           <TableHead>
             <TableRow>
               <TableCell>Марка</TableCell>
@@ -477,53 +558,156 @@ export default function CarModelsAdminPage() {
             </TableRow>
           </TableHead>
           <TableBody>
-            {models.map((m) => (
-              <TableRow key={m.id}>
-                <TableCell>{m.make}</TableCell>
-                <TableCell>{m.modelName}</TableCell>
-                <TableCell>{m.year}</TableCell>
-                <TableCell>{transmissionLabels[m.transmission as Transmission]}</TableCell>
-                <TableCell>
-                  <IconButton onClick={() => handleOpenDialog(m.id)}>
-                    <DeleteIcon />
-                  </IconButton>
-                </TableCell>
+            {isLoadingModels ? (
+              <TableRow>
+                <TableCell colSpan={5} align="center"><CircularProgress /></TableCell>
               </TableRow>
-            ))}
+            ) : models.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={5} align="center">Нет данных</TableCell>
+              </TableRow>
+            ) : (
+              models.map(m => (
+                <TableRow key={m.id}>
+                  <TableCell>{m.make}</TableCell>
+                  <TableCell>{m.modelName}</TableCell>
+                  <TableCell>{m.year}</TableCell>
+                  <TableCell>{transmissionLabels[m.transmission as Transmission]}</TableCell>
+                  <TableCell>
+                    <Button size="small" onClick={() => openModelModal(m.id)}>
+                      Подробнее
+                    </Button>
+                    <IconButton
+                      aria-label="Удалить"
+                      onClick={() => handleOpenDialog(m.id)}
+                      size="small"
+                      color="error"
+                    >
+                      <DeleteIcon fontSize="small" />
+                    </IconButton>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
-      )}
 
-      <Snackbar
-        open={snackbarOpen}
-        autoHideDuration={6000}
-        onClose={() => setSnackbarOpen(false)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert onClose={() => setSnackbarOpen(false)} severity={snackbarSeverity} sx={{ width: '100%' }}>
-          {snackbarMessage}
-        </Alert>
-      </Snackbar>
+        <TablePagination
+          component="div"
+          count={totalCount}
+          page={page}
+          onPageChange={handlePageChange}
+          rowsPerPage={pageSize}
+          onRowsPerPageChange={handlePageSizeChange}
+          rowsPerPageOptions={[5, 10, 25]}
+        />
+      </Box>
 
-      <Dialog
-        open={openDialog}
-        onClose={handleCloseDialog}
-      >
+      <Dialog open={openDialog} onClose={handleCloseDialog}>
         <DialogTitle>Подтверждение удаления</DialogTitle>
         <DialogContent>
-          <DialogContentText>
-            Вы уверены, что хотите удалить эту модель? Это действие нельзя отменить.
-          </DialogContentText>
+          <DialogContentText>Вы уверены, что хотите удалить эту модель?</DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseDialog} color="primary">
-            Отмена
-          </Button>
-          <Button onClick={handleConfirmDelete} color="error" autoFocus>
+          <Button onClick={handleCloseDialog}>Отмена</Button>
+          <Button onClick={handleConfirmDelete} color="error">
             Удалить
           </Button>
         </DialogActions>
       </Dialog>
+
+      <Dialog open={!!selectedModelId} onClose={closeModelModal} maxWidth="md" fullWidth>
+        <DialogTitle>Подробности модели</DialogTitle>
+        <DialogContent dividers>
+          {selectedModelData.loading && <CircularProgress />}
+          {selectedModelData.error && (
+            <Typography color="error">{selectedModelData.error}</Typography>
+          )}
+          {!selectedModelData.loading && selectedModelData.detail && (
+            <>
+              <Typography variant="h6" gutterBottom>
+                {selectedModelData.detail.make} {selectedModelData.detail.modelName}
+              </Typography>
+              <Typography>Год: {selectedModelData.detail.year}</Typography>
+              <Typography>
+                Коробка: {transmissionLabels[selectedModelData.detail.transmission as Transmission]}
+              </Typography>
+              <Typography>Мест: {selectedModelData.detail.seatingCapacity}</Typography>
+              <Typography>
+                Расход топлива: {selectedModelData.detail.fuelConsumptionPer100Km} л/100км
+              </Typography>
+
+             <Box mt={2}>
+            <Typography variant="subtitle1">Фото:</Typography>
+            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+              {selectedModelData.photos.length === 0 && (
+                <Typography>Фото отсутствуют</Typography>
+              )}
+              {selectedModelData.photos.map((p) => {
+                const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL ?? '';
+                const imageUrl = p.url.startsWith('http') ? p.url : apiBaseUrl + p.url;
+
+                return (
+                  <Box
+                    key={p.id}
+                    component="img"
+                    src={imageUrl}
+                    alt="Фото модели"
+                    sx={{ maxHeight: 100, borderRadius: 1 }}
+                  />
+                );
+              })}
+            </Box>
+          </Box>
+
+              <Box mt={2}>
+                <Typography variant="subtitle1">Цены аренды:</Typography>
+                <Table size="small" sx={{ maxWidth: 400 }}>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Тип</TableCell>
+                      <TableCell>Цена</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {selectedModelData.rentalPrices.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={2} align="center">
+                          Цены отсутствуют
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      selectedModelData.rentalPrices.map((rp) => (
+                        <TableRow key={rp.id}>
+                          <TableCell>{priceLabels[rp.priceType as PriceType]}</TableCell>
+                          <TableCell>{rp.price} ₽</TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </Box>
+            </>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeModelModal}>Закрыть</Button>
+        </DialogActions>
+      </Dialog>
+
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={4000}
+        onClose={() => setSnackbarOpen(false)}
+      >
+        <Alert
+          onClose={() => setSnackbarOpen(false)}
+          severity={snackbarSeverity}
+          sx={{ width: '100%' }}
+        >
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </Container>
   );
 }

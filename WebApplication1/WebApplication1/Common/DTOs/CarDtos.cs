@@ -8,6 +8,7 @@ namespace WebApplication1.Common.DTOs
         public string ModelName { get; set; } = null!;
         public string Make { get; set; } = null!;
         public bool IsEnabled { get; set; }
+        public Guid CarModelId { get; set; } 
     }
 
     public class CarDto
@@ -38,5 +39,12 @@ namespace WebApplication1.Common.DTOs
     public class UpdateCarDto : CreateCarDto
     {
         public bool? IsEnabled { get; set; }
+    }
+    
+    public class CarSearchParams
+    {
+        public string? SearchQuery { get; set; }
+        public int Page { get; set; } = 1;
+        public int PageSize { get; set; } = 10;
     }
 }

@@ -32,7 +32,6 @@ public class CarImageController : ControllerBase
     }
 
     [HttpGet("{carId:guid}")]
-    [Authorize(Roles = $"{Roles.AdminName},{Roles.UserName}")]
     public async Task<ActionResult<IEnumerable<CarImage>>> GetByCarId(Guid carId)
     {
         var images = await _carImageService.GetImagesByCarIdAsync(carId);

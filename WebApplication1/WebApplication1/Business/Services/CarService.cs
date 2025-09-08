@@ -49,5 +49,16 @@ namespace WebApplication1.Business.Services
             var car = await _carRepository.GetByIdAsync(id);
             await _carRepository.SoftDeleteAsync(car);
         }
+        public async Task<PagedResult<RentalLocation>> SearchPagedAsync(CarSearchParams searchParams)
+        {
+            var (items, totalCount) = await _carRepository.SearchAsync(searchParams);
+            return new PagedResult<RentalLocation>
+            {
+                Items = items,
+                TotalCount = totalCount,
+                Page = searchParams.Page,
+                PageSize = searchParams.PageSize
+            };
+        }
     }
 }

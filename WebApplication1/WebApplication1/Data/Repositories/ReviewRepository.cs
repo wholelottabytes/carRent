@@ -29,22 +29,26 @@ public class ReviewRepository : IReviewRepository
             .Include(r => r.User)
             .ToListAsync();
     }
+
     public async Task UpdateAsync(Review review)
     {
         _context.Reviews.Update(review);
         await _context.SaveChangesAsync();
     }
+
     public async Task<Review?> GetByUserAndRentalLocationAsync(string userId, Guid rentalLocationId)
     {
         return await _context.Reviews
             .FirstOrDefaultAsync(r => r.UserId == userId && r.RentalLocationId == rentalLocationId);
     }
+
     public async Task<Review?> GetByIdAsync(Guid id)
     {
         return await _context.Reviews
             .Include(r => r.User)
             .FirstOrDefaultAsync(r => r.Id == id);
     }
+
     public async Task<int> GetCountByRentalLocationIdAsync(Guid rentalLocationId)
     {
         return await _context.Reviews.CountAsync(r => r.RentalLocationId == rentalLocationId);

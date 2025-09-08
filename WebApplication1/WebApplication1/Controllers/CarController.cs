@@ -54,5 +54,17 @@ namespace WebApplication1.API.Controllers
             await _carService.DeleteAsync(id);
             return NoContent();
         }
+        [HttpGet]
+        public async Task<IActionResult> Search([FromQuery] CarSearchParams searchParams)
+        {
+            var pagedResult = await _carService.SearchPagedAsync(searchParams);
+            return Ok(new
+            {
+                pagedResult.Page,
+                pagedResult.PageSize,
+                TotalCount = pagedResult.TotalCount,
+                Items = pagedResult.Items
+            });
+        }
     }
 }

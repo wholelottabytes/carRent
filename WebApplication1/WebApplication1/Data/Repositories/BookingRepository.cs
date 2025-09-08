@@ -30,6 +30,7 @@ public class BookingRepository : IBookingRepository
         return await _context.Bookings
             .Include(b => b.RentalLocation)
             .Include(b => b.Car)
+            .ThenInclude(c => c.CarModel)
             .Where(b => b.UserId == userId && !b.IsDeleted)
             .ToListAsync();
     }
@@ -39,4 +40,6 @@ public class BookingRepository : IBookingRepository
         booking.IsDeleted = true;
         await _context.SaveChangesAsync();
     }
+  
+
 }

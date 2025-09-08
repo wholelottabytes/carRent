@@ -7,10 +7,12 @@ using WebApplication1.Data.Repositories;
 public class CarModelService : ICarModelService
 {
     private readonly ICarModelRepository _carModelRepository;
+    private readonly IWebHostEnvironment _environment;
 
-    public CarModelService(ICarModelRepository repo)
+    public CarModelService(ICarModelRepository repo, IWebHostEnvironment environment)
     {
         _carModelRepository = repo;
+        _environment = environment;
     }
 
     public async Task<CarModel> CreateAsync(CreateCarModelDto dto)
@@ -64,4 +66,39 @@ public class CarModelService : ICarModelService
 
         await _carModelRepository.SoftDeleteAsync(model);
     }
+    public async Task<CarModelDto> CreateFullAsync(CreateFullCarModelDto dto, IFormFile[] files)
+    {
+        var model = new CarModel
+        {
+            Make = dto.Make,
+            ModelName = dto.ModelName,
+            Year = dto.Year,
+            Transmission = dto.Transmission,
+            SeatingCapacity = dto.SeatingCapacity,
+            FuelConsumptionPer100Km = dto.FuelConsumptionPer100Km,
+        };
+
+        var prices = dto.RentalPrices.Select(p => new RentalPrice
+        {
+            Price = p.Price,
+            PriceType = p.PriceType
+        }).ToList();
+
+        var saved = await _carModelRepository.AddFullModelAsync(model, prices, files.ToList(), _environment);
+        return DtoMapper.ToDto(saved);
+    }
+    public async Task<PagedResult<CarModelDto>> SearchPagedAsync(CarModelSearchParamsModel searchParams)
+    {
+        var (items, totalCount) = await _carModelRepository.SearchAsync(searchParams);
+        return new PagedResult<CarModelDto>
+        {
+            Items = items,
+            TotalCount = totalCount,
+            Page = searchParams.Page,
+            PageSize = searchParams.PageSize
+        };
+    }
+    
+    
+
 }

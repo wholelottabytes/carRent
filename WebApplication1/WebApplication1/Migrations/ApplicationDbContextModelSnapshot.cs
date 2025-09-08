@@ -265,22 +265,22 @@ namespace WebApplication1.Migrations
                     b.Property<Guid>("CarId")
                         .HasColumnType("uuid");
 
-                    b.Property<DateTime>("EndDate")
+                    b.Property<DateTimeOffset>("EndDate")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
-                    b.Property<DateTime?>("PickupTime")
+                    b.Property<DateTimeOffset?>("PickupTime")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<Guid>("RentalLocationId")
                         .HasColumnType("uuid");
 
-                    b.Property<DateTime?>("ReturnTime")
+                    b.Property<DateTimeOffset?>("ReturnTime")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<DateTime>("StartDate")
+                    b.Property<DateTimeOffset>("StartDate")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<decimal>("TotalPrice")

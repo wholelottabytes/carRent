@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WebApplication1.Common.Constants;
@@ -48,5 +49,29 @@ namespace WebApplication1.API.Controllers
             await _carModelService.DeleteAsync(id);
             return NoContent();
         }
+        [HttpPost]
+        public async Task<ActionResult<CarModelDto>> CreateFull(
+            [FromForm] string jsonData,
+            [FromForm] IFormFile[] files)
+        {
+            var dto = JsonConvert.DeserializeObject<CreateFullCarModelDto>(jsonData);
+            if (dto is null) return BadRequest("Invalid JSON");
+
+            var result = await _carModelService.CreateFullAsync(dto, files);
+            return CreatedAtAction(nameof(Get), new { id = result.Id }, result);
+        }
+        [HttpGet]
+        public async Task<IActionResult> Search([FromQuery] CarModelSearchParamsModel searchParams)
+        {
+            var pagedResult = await _carModelService.SearchPagedAsync(searchParams);
+            return Ok(new
+            {
+                pagedResult.Page,
+                pagedResult.PageSize,
+                TotalCount = pagedResult.TotalCount,
+                Items = pagedResult.Items
+            });
+        }
     }
+    
 }

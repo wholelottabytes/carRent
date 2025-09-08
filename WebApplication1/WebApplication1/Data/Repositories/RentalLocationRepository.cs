@@ -24,8 +24,66 @@ public class RentalLocationRepository : IRentalLocationRepository
             .ThenInclude(c => c.CarModel)
             .FirstOrDefaultAsync(r => r.Id == id && !r.IsDeleted);
     }
+    public async Task<RentalLocation?> GetByIdPagedAsync(Guid id, int page, int pageSize)
+    {
+        return await _context.RentalLocations
+            .Include(r => r.Cars.Where(c => !c.IsDeleted)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize))
+            .ThenInclude(c => c.CarModel)
+            .FirstOrDefaultAsync(r => r.Id == id && !r.IsDeleted);
+    }
     
+    public async Task<(IEnumerable<RentalLocationSimpleDto> Items, int TotalCount)> SearchDeletedAsync(LocationSearchParams searchParams)
+    {
+        var query = _context.RentalLocations.AsQueryable()
+            .Where(r => r.IsDeleted);
 
+        if (!string.IsNullOrWhiteSpace(searchParams.SearchQuery))
+        {
+            var search = searchParams.SearchQuery.ToLower();
+            query = query.Where(r =>
+                r.Country.ToLower().Contains(search) ||
+                r.City.ToLower().Contains(search) ||
+                r.Name.ToLower().Contains(search) ||
+                r.Address.ToLower().Contains(search));
+        }
+
+        var totalCount = await query.CountAsync();
+
+        var items = await query
+            .OrderBy(r => r.City)
+            .ThenBy(r => r.Name)
+            .Skip((searchParams.Page - 1) * searchParams.PageSize)
+            .Take(searchParams.PageSize)
+            .Select(r => new RentalLocationSimpleDto
+            {
+                Id = r.Id,
+                Country = r.Country,
+                City = r.City,
+                Name = r.Name,
+                Address = r.Address
+            })
+            .ToListAsync();
+
+        return (items, totalCount);
+    }
+
+    public async Task RestoreAsync(Guid id)
+    {
+        var location = await _context.RentalLocations.FindAsync(id);
+        if (location is not null)
+        {
+            location.IsDeleted = false;
+            _context.RentalLocations.Update(location);
+            await _context.SaveChangesAsync();
+
+        }
+    }
+    public async Task<bool> HasCarsAsync(Guid locationId)
+    {
+        return await _context.Cars.AnyAsync(c => c.RentalLocationId == locationId && c.IsEnabled);
+    }
 
     public async Task<IEnumerable<RentalLocation>> ListAsync()
     {
@@ -42,20 +100,33 @@ public class RentalLocationRepository : IRentalLocationRepository
         await _context.SaveChangesAsync();
     }
 
-    public async Task SoftDeleteAsync(RentalLocation loc)
+    public async Task SoftDeleteAsync(RentalLocation location)
     {
-        loc.IsDeleted = true;
-        await UpdateAsync(loc);
+        var hasCars = await HasCarsAsync(location.Id);
+        if (hasCars)
+        {
+            location.IsDeleted = true;
+            _context.RentalLocations.Update(location);
+            await _context.SaveChangesAsync(); 
+        }
+        else
+        {
+            _context.RentalLocations.Remove(location);
+            await _context.SaveChangesAsync();
+        }
     }
 
-    public async Task<(IEnumerable<CarModelSummaryDto> Items, int TotalCount)> SearchCarModelsAsync(CarModelSearchParams searchParams)
+   public async Task<(IEnumerable<CarModelSummaryDto> Items, int TotalCount)> SearchCarModelsAsync(CarModelSearchParams searchParams)
     {
+        Console.WriteLine($"[DBG] searchParams.StartDate = {searchParams.StartDate}, Kind={searchParams.StartDate?.Kind}");
+
         var query = _context.Cars
             .Include(c => c.CarModel)
-            .ThenInclude(cm => cm.RentalPrices)
+                .ThenInclude(cm => cm.RentalPrices)
             .Include(c => c.RentalLocation)
+                .ThenInclude(rl => rl!.AdditionalServices.Where(s => !s.IsDeleted))
             .Include(c => c.Bookings)
-            .Where(c => !c.IsDeleted && c.IsEnabled);
+            .Where(c => !c.IsDeleted && c.IsEnabled && !c.CarModel.IsDeleted);
 
         query = query
             .WhereIfNotNullOrEmpty(searchParams.Country, c => c.RentalLocation != null && c.RentalLocation.Country == searchParams.Country)
@@ -68,26 +139,56 @@ public class RentalLocationRepository : IRentalLocationRepository
                 !c.Bookings.Any(b => !b.IsDeleted && searchParams.StartDate < b.EndDate && searchParams.EndDate > b.StartDate));
         }
 
-        // Группируем в памяти
         var groupedInMemory = await query
             .AsNoTracking()
             .ToListAsync();
 
         var groupedModels = groupedInMemory
-            .GroupBy(c => c.CarModel)
-            .Select(g => new CarModelSummaryDto
+            .GroupBy(c => c.CarModel!.Id)
+            .Select(g =>
             {
-                CarModelId = g.Key!.Id,
-                ModelName = g.Key.ModelName,
-                Make = g.Key.Make,
-                AvailableCarsCount = g.Count(),
-                RentalPrices = g.Key.RentalPrices
-                    .Select(rp => new RentalPriceDto
+                var model = g.First().CarModel!;
+                var locations = g
+                    .Where(c => c.RentalLocation != null)
+                    .Select(c => c.RentalLocation!)
+                    .DistinctBy(loc => loc.Id)
+                    .Select(loc => new RentalLocationWithServicesDto
                     {
-                        Id = rp.Id,
-                        Price = rp.Price,
-                        PriceType = rp.PriceType
-                    }).ToList()
+                        Id = loc.Id,
+                        Name = loc.Name,
+                        City = loc.City,
+                        Address = loc.Address,
+                        AdditionalServices = loc.AdditionalServices
+                            .Select(s => new AdditionalServiceDto
+                            {
+                                Id = s.Id,
+                                Name = s.Name,
+                                Price = s.Price,
+                                RentalLocationId = s.RentalLocationId
+                            })
+                            .ToList()
+                    })
+                    .ToList();
+
+                return new CarModelSummaryDto
+                {
+                    CarModelId = model.Id,
+                    ModelName = model.ModelName,
+                    Make = model.Make,
+                    Year = model.Year,
+                    Transmission = model.Transmission.ToString(),
+                    SeatingCapacity = model.SeatingCapacity,
+                    FuelConsumptionPer100Km = model.FuelConsumptionPer100Km,
+                    AvailableCarsCount = g.Count(),
+                    RentalPrices = model.RentalPrices
+                        .Select(rp => new RentalPriceDto
+                        {
+                            Id = rp.Id,
+                            Price = rp.Price,
+                            PriceType = rp.PriceType
+                        }).ToList(),
+                    AvailableAtLocations = locations
+                };
             })
             .OrderBy(cm => cm.ModelName)
             .ToList();
@@ -98,6 +199,41 @@ public class RentalLocationRepository : IRentalLocationRepository
             .Skip((searchParams.Page - 1) * searchParams.PageSize)
             .Take(searchParams.PageSize)
             .ToList();
+
+        return (items, totalCount);
+    }
+    public async Task<(IEnumerable<RentalLocationSimpleDto> Items, int TotalCount)> SearchAsync(LocationSearchParams searchParams)
+    {
+        var query = _context.RentalLocations
+            .Where(r => !r.IsDeleted);
+
+        if (!string.IsNullOrWhiteSpace(searchParams.SearchQuery))
+        {
+            var search = searchParams.SearchQuery.Trim().ToLower();
+            query = query.Where(r =>
+                r.Country.ToLower().Contains(search) ||
+                r.City.ToLower().Contains(search) ||
+                r.Name.ToLower().Contains(search) ||
+                r.Address.ToLower().Contains(search));
+        }
+
+        var totalCount = await query.CountAsync();
+
+        var items = await query
+            .AsNoTracking()
+            .OrderBy(r => r.City)
+            .ThenBy(r => r.Name)
+            .Skip((searchParams.Page - 1) * searchParams.PageSize)
+            .Take(searchParams.PageSize)
+            .Select(r => new RentalLocationSimpleDto
+            {
+                Id = r.Id,
+                Country = r.Country,
+                City = r.City,
+                Name = r.Name,
+                Address = r.Address
+            })
+            .ToListAsync();
 
         return (items, totalCount);
     }

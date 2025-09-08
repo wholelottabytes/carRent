@@ -10,7 +10,7 @@ namespace WebApplication1.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]/[action]")]
-[Authorize(Roles = Roles.UserName)]
+[Authorize(Roles = $"{Roles.AdminName},{Roles.UserName}")]
 public class BookingController : ControllerBase
 {
     private readonly IBookingService _bookingService;
@@ -21,40 +21,56 @@ public class BookingController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult<Booking>> Create([FromBody] BookingRequestDto dto)
+    public async Task<ActionResult<BookingDto>> Create([FromBody] BookingRequestDto dto)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)
                      ?? throw new UnauthorizedAccessException("No user ID");
 
-        var booking = new Booking
+        var booking = await _bookingService.CreateBookingAsync(
+            dto.CarModelId, 
+            dto.RentalLocationId,
+            dto.StartDate.ToUniversalTime(),
+            dto.EndDate.ToUniversalTime(),
+            dto.PickupTime?.ToUniversalTime(),
+            dto.ReturnTime?.ToUniversalTime(),
+            userId,
+            dto.AdditionalServiceIds ?? []
+        );
+
+        var result = new BookingDto
         {
-            CarId = dto.CarId,
-            RentalLocationId = dto.RentalLocationId,
-            StartDate = dto.StartDate.ToUniversalTime(),
-            EndDate = dto.EndDate.ToUniversalTime(),
-            PickupTime = dto.PickupTime?.ToUniversalTime(),
-            ReturnTime = dto.ReturnTime?.ToUniversalTime(),
-            UserId = userId
+            Id = booking.Id,
+            CarId = booking.CarId,
+            RentalLocationId = booking.RentalLocationId,
+            StartDate = booking.StartDate,
+            EndDate = booking.EndDate,
+            PickupTime = booking.PickupTime,
+            ReturnTime = booking.ReturnTime,
+            TotalPrice = booking.TotalPrice,
         };
 
-        var result = await _bookingService.CreateBookingAsync(booking, dto.AdditionalServiceIds ?? []);
         return Ok(result);
     }
-
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Booking>>> MyBookings()
+    public async Task<ActionResult<IEnumerable<BookingViewDto>>> MyBookings()
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)
                      ?? throw new UnauthorizedAccessException("No user ID");
 
-        var bookings = await _bookingService.GetUserBookingsAsync(userId);
+        var bookings = await _bookingService.GetUserBookingViewsAsync(userId);
         return Ok(bookings);
     }
-
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(Guid id)
     {
         await _bookingService.DeleteAsync(id);
         return NoContent();
+    }
+    [HttpGet]
+    public async Task<IActionResult> GetBookedTimeIntervals(Guid modelId, Guid locationId)
+    {
+        var bookings = await _bookingService.GetBookedTimeIntervalsAsync(modelId, locationId);
+        var result = bookings.Select(b => new TimeIntervalDto { Start = b.Start, End = b.End }).ToList();
+        return Ok(result);
     }
 }

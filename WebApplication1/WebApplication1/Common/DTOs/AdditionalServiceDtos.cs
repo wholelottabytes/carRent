@@ -9,4 +9,12 @@ namespace WebApplication1.Common.DTOs
         [Required] public Guid RentalLocationId { get; set; }
     }
     public class UpdateAdditionalServiceDto : CreateAdditionalServiceDto { }
+    
+    public class AdditionalServiceDto
+    {
+        public Guid Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public decimal Price { get; set; }
+        public Guid RentalLocationId { get; set; }
+    }
 }

@@ -1,0 +1,48 @@
+{
+  "name": "car-rental-client",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --turbopack",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@emotion/cache": "^11.14.0",
+    "@emotion/react": "^11.14.0",
+    "@emotion/server": "^11.11.0",
+    "@emotion/styled": "^11.14.1",
+    "@mui/icons-material": "^7.2.0",
+    "@mui/lab": "^7.0.0-beta.14",
+    "@mui/material": "^7.2.0",
+    "@mui/material-nextjs": "^7.2.0",
+    "@mui/x-date-pickers": "^8.8.0",
+    "@mui/x-date-pickers-pro": "^8.8.0",
+    "@reduxjs/toolkit": "^2.8.2",
+    "country-state-city": "^3.2.1",
+    "date-fns": "^4.1.0",
+    "dayjs": "^1.11.13",
+    "jwt-decode": "^4.0.0",
+    "next": "15.3.4",
+    "react": "^19.0.0",
+    "react-date-range": "^2.0.1",
+    "react-day-picker": "^9.8.0",
+    "react-dom": "^19.0.0",
+    "react-hook-form": "^7.59.0",
+    "react-redux": "^9.2.0",
+    "swiper": "^11.2.10"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3",
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-date-range": "^1.4.10",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "15.3.4",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}

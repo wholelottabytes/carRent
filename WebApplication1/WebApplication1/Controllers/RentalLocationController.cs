@@ -22,7 +22,40 @@ public class RentalLocationController : ControllerBase
         return CreatedAtAction(nameof(Get), new { id = loc.Id }, loc);
     }
    
+    [HttpGet("{id}")]
+    [Authorize(Roles = $"{Roles.AdminName},{Roles.UserName}")]
+    public async Task<ActionResult<RentalLocationDto>> GetPaged(Guid id, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+    {
+        var loc = await _rentalLocationService.GetByIdPagedAsync(id, page, pageSize);
 
+        var totalCars = await _rentalLocationService.GetByIdPagedAsync(id, 1, int.MaxValue);
+        var totalCount = totalCars.Cars?.Count ?? 0;
+
+        var dto = new RentalLocationDto
+        {
+            Id = loc.Id,
+            Country = loc.Country,
+            City = loc.City,
+            Name = loc.Name,
+            Address = loc.Address,
+            Cars = loc.Cars?.Select(c => new CarDtoLocation
+            {
+                Id = c.Id,
+                ModelName = c.CarModel?.ModelName ?? "Unknown",
+                Make = c.CarModel?.Make ?? "Unknown",
+                IsEnabled = c.IsEnabled,
+                CarModelId = c.CarModelId
+            }).ToList() ?? new List<CarDtoLocation>()
+        };
+
+        return Ok(new
+        {
+            Page = page,
+            PageSize = pageSize,
+            TotalCount = totalCount,
+            Item = dto
+        });
+    }
     [HttpGet("{id}")]
     [Authorize(Roles = $"{Roles.AdminName},{Roles.UserName}")]
     public async Task<ActionResult<RentalLocationDto>> Get(Guid id)
@@ -41,7 +74,8 @@ public class RentalLocationController : ControllerBase
                 Id = c.Id,
                 ModelName = c.CarModel?.ModelName ?? "Unknown",
                 Make = c.CarModel?.Make ?? "Unknown",    
-                IsEnabled = c.IsEnabled
+                IsEnabled = c.IsEnabled,
+                CarModelId = c.CarModelId 
             }).ToList() ?? new List<CarDtoLocation>()
         };
 
@@ -56,14 +90,34 @@ public class RentalLocationController : ControllerBase
         return NoContent();
     }
 
-    [HttpDelete("{id}")]
-    [Authorize(Roles = Roles.AdminName)]
+    [HttpDelete("{id:guid}")]
+    [Authorize(Roles = $"{Roles.AdminName},{Roles.UserName}")]
     public async Task<IActionResult> Delete(Guid id)
     {
         await _rentalLocationService.DeleteAsync(id);
         return NoContent();
     }
-    
+    [HttpGet]
+    [Authorize(Roles = $"{Roles.AdminName},{Roles.UserName}")]
+    public async Task<IActionResult> SearchDeleted([FromQuery] LocationSearchParams searchParams)
+    {
+        var pagedResult = await _rentalLocationService.SearchDeletedPagedAsync(searchParams);
+
+        return Ok(new
+        {
+            pagedResult.Page,
+            pagedResult.PageSize,
+            TotalCount = pagedResult.TotalCount,
+            Items = pagedResult.Items
+        });
+    }
+    [HttpPost("restore/{id:guid}")]
+    [Authorize(Roles = $"{Roles.AdminName},{Roles.UserName}")]
+    public async Task<IActionResult> Restore(Guid id)
+    {
+        await _rentalLocationService.RestoreAsync(id);
+        return Ok();
+    }
     [HttpGet]
     [Authorize(Roles = $"{Roles.AdminName},{Roles.UserName}")]
     public async Task<ActionResult<IEnumerable<RentalLocationDto>>> List()
@@ -82,14 +136,21 @@ public class RentalLocationController : ControllerBase
                 Id = c.Id,
                 ModelName = c.CarModel?.ModelName ?? "Unknown",
                 Make = c.CarModel?.Make ?? "Unknown",  
-                IsEnabled = c.IsEnabled
+                IsEnabled = c.IsEnabled,
+                CarModelId = c.CarModelId 
             }).ToList() ?? new List<CarDtoLocation>()
         });
 
         return Ok(dtos);
     }
     [HttpGet]
-    [Authorize(Roles = $"{Roles.AdminName},{Roles.UserName}")]
+    public async Task<ActionResult<IEnumerable<RentalLocationSimpleDto>>> ListSimple()
+    {
+        var locations = await _rentalLocationService.ListSimpleAsync();
+
+        return Ok(locations);
+    }
+    [HttpGet]
     public async Task<IActionResult> SearchCarModels([FromQuery] CarModelSearchParams searchParams)
     {
         var pagedResult = await _rentalLocationService.SearchCarModelsPagedAsync(searchParams);
@@ -98,6 +159,20 @@ public class RentalLocationController : ControllerBase
         {
             searchParams.Page,
             searchParams.PageSize,
+            TotalCount = pagedResult.TotalCount,
+            Items = pagedResult.Items
+        });
+    }
+    [HttpGet]
+    [Authorize(Roles = Roles.AdminName)]
+    public async Task<IActionResult> Search([FromQuery] LocationSearchParams searchParams)
+    {
+        var pagedResult = await _rentalLocationService.SearchPagedAsync(searchParams);
+
+        return Ok(new
+        {
+            pagedResult.Page,
+            pagedResult.PageSize,
             TotalCount = pagedResult.TotalCount,
             Items = pagedResult.Items
         });

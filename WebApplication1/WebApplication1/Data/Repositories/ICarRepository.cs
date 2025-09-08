@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using WebApplication1.Common.DTOs;
 using WebApplication1.Data.Models;
 
 namespace WebApplication1.Data.Repositories
@@ -13,5 +14,8 @@ namespace WebApplication1.Data.Repositories
         Task AddAsync(Car car);
         Task UpdateAsync(Car car);
         Task SoftDeleteAsync(Car car);
+        Task<Car?> GetSingleAvailableCarAsync(Guid carModelId, Guid rentalLocationId, DateTimeOffset startDate, DateTimeOffset endDate);
+        Task<List<Car>> GetCarsByModelAndLocationAsync(Guid modelId, Guid locationId);
+        Task<(IEnumerable<RentalLocation> Items, int TotalCount)> SearchAsync(CarSearchParams searchParams);
     }
 }

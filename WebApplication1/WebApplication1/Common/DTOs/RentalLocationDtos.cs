@@ -19,4 +19,27 @@ namespace WebApplication1.Common.DTOs
         [Required] public string Address { get; set; } = null!;
     }
     public class UpdateRentalLocationDto : CreateRentalLocationDto { }
+    public class RentalLocationWithServicesDto
+    {
+        public Guid Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string City { get; set; } = string.Empty;
+        public string Address { get; set; } = string.Empty;
+        public List<AdditionalServiceDto> AdditionalServices { get; set; } = new List<AdditionalServiceDto>();
+    }
+    public class RentalLocationSimpleDto
+    {
+        public Guid Id { get; set; }
+        public string Country { get; set; } = null!;
+        public string City { get; set; } = null!;
+        public string Name { get; set; } = null!;
+        
+        public string Address { get; set; } = null!;
+    }
+    public class LocationSearchParams
+    {
+        public string? SearchQuery { get; set; }
+        public int Page { get; set; } = 1;
+        public int PageSize { get; set; } = 10;
+    }
 }

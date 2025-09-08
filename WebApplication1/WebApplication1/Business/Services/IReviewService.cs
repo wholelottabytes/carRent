@@ -6,7 +6,7 @@ namespace WebApplication1.Business.Services;
 public interface IReviewService
 {
     Task<Review> CreateReviewAsync(Review review);
-    Task<IEnumerable<Review>> GetReviewsAsync(Guid rentalLocationId, PaginationParams pagination);
+    Task<IEnumerable<ReviewDto>> GetReviewsAsync(Guid rentalLocationId, PaginationParams pagination);
     Task<int> GetReviewsCountAsync(Guid rentalLocationId);
-    Task<Review> UpdateReviewAsync(Guid reviewId, UpdateReviewDto dto, string userId);
+    Task<ReviewDto> UpdateReviewAsync(Guid reviewId, UpdateReviewDto dto, string userId);
 }

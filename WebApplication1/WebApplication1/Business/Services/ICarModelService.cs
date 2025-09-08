@@ -10,4 +10,7 @@ public interface ICarModelService
     Task<CarModelDto> GetByIdAsync(Guid id);
     Task UpdateAsync(Guid id, UpdateCarModelDto dto);
     Task DeleteAsync(Guid id);
+    Task<CarModelDto> CreateFullAsync(CreateFullCarModelDto dto, IFormFile[] files);
+    Task<PagedResult<CarModelDto>> SearchPagedAsync(CarModelSearchParamsModel searchParams);
+
 }
